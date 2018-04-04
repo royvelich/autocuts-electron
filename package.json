@@ -18,6 +18,8 @@
   "license": "MIT",
   "dependencies": {
     "electron": "^1.8.4",
+    "gulp-git": "^2.5.2",
+    "nan": "^2.10.0",
     "typescript": "^2.8.1"
   }
 }
