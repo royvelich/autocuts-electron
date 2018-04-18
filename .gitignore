@@ -1,3 +1,4 @@
 node_modules/
 engine/libigl/
 engine/addon/build/
+app/bower_components/
