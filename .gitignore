@@ -1,4 +1,6 @@
 node_modules/
-engine/libigl/
-engine/addon/build/
+autocuts-engine/libigl/
+autocuts-engine/build/
+autocuts-engine/node-modules/
+autocuts-engine/npm-debug.log
 app/bower_components/

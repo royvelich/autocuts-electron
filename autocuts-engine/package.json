@@ -1,0 +1,15 @@
+{
+  "name": "autocuts-engine",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "install": "node-gyp rebuild"
+  },
+  "author": "",
+  "license": "ISC",
+  "gypfile": true,
+  "dependencies": {
+    "nan": "^2.10.0"
+  }
+}

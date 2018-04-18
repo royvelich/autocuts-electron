@@ -1,24 +1,9 @@
 #include <cmath>
 #include <nan.h>
+#include <igl/readOFF.h>
 
 #include "Utils.h"
 #include "SolverWrapper.h"
-
-#include <igl/readOFF.h>
-
-// call node-gyp rebuild --target=1.7.10 --arch=x64 --dist-url=https://atom.io/download/atom-shell
-// when changing the addon.cpp
-
-// OR: rebuild the VS solution (preferred)
-
-// when needing to generate new vs solution do
-// node-gyp configure
-// add openmp option
-// add Preprocessor NOMINMAX
-// change node header directory to correct version in .node-gyp/x.x.x/node
-// install new version with node-gyp install x.x.x
-// (resides in C:/User/you/.node-gyp per default on windows)
-// build Release
 
 enum class Param { LAMBDA, DELTA, BOUND, POSITION_WEIGHT };
 
