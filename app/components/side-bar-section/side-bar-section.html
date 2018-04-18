@@ -1,0 +1,25 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/vaadin-item/vaadin-item.html">
+<dom-module id="side-bar-section">
+  <template>
+    <style>
+      :host {
+          display: flex;
+          flex-direction: column;
+      }
+    </style>
+    <h3>[[title]]</h3>
+    <slot></slot>
+  </template>
+  <script>
+    class SideBarSection extends Polymer.Element {
+      static get is() { return "side-bar-section"; }
+      static get properties() {
+        return {
+          title: String
+        }
+      }
+    }
+    customElements.define(SideBarSection.is, SideBarSection);
+  </script>
+</dom-module>

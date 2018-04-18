@@ -1,0 +1,50 @@
+{
+  "name": "vaadin-ordered-layout",
+  "homepage": "https://vaadin.com/elements",
+  "authors": [
+    "Vaadin Ltd"
+  ],
+  "description": "vaadin-ordered-layout",
+  "main": [
+    "vaadin-horizontal-layout.html",
+    "vaadin-vertical-layout.html"
+  ],
+  "keywords": [
+    "Vaadin",
+    "vaadin-ordered-layout",
+    "web-components",
+    "web-component",
+    "polymer"
+  ],
+  "license": "Apache-2.0",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "gulpfile.js",
+    "package-lock.json",
+    "wct.conf.js"
+  ],
+  "dependencies": {
+    "polymer": "^2.0.0",
+    "vaadin-themable-mixin": "vaadin/vaadin-themable-mixin#^1.1.5",
+    "vaadin-lumo-styles": "vaadin/vaadin-lumo-styles#^1.0.0"
+  },
+  "devDependencies": {
+    "iron-component-page": "^3.0.0",
+    "iron-demo-helpers": "^2.0.0",
+    "webcomponentsjs": "^1.0.0",
+    "web-component-tester": "^6.1.5",
+    "vaadin-demo-helpers": "vaadin/vaadin-demo-helpers#^1.2.0"
+  },
+  "version": "1.0.0-beta1",
+  "_release": "1.0.0-beta1",
+  "_resolution": {
+    "type": "version",
+    "tag": "v1.0.0-beta1",
+    "commit": "7b7f90e96fd3db8432283cf6a4f251a936b697f7"
+  },
+  "_source": "https://github.com/vaadin/vaadin-ordered-layout.git",
+  "_target": "1.0.0-beta1",
+  "_originalSource": "vaadin/vaadin-ordered-layout"
+}

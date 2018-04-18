@@ -1,0 +1,21 @@
+{
+  "name": "autocuts-electron",
+  "version": "0.1.0",
+  "description": "An implementation of autocuts in electron.",
+  "repository": "https://github.com/xenomarz/autocuts-electron",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "keywords": [
+    "electron",
+    "autocuts"
+  ],
+  "author": "Roy Velich",
+  "license": "MIT",
+  "dependencies": {
+    "electron": "^1.8.4",
+    "gulp-git": "^2.5.2",
+    "nan": "^2.10.0"
+  }
+}

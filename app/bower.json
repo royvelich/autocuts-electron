@@ -1,0 +1,28 @@
+{
+  "name": "autocuts-electron",
+  "description": "An implementation of autocuts in electron.",
+  "main": "main.js",
+  "authors": [
+    "Roy Velich"
+  ],
+  "license": "MIT",
+  "keywords": [
+    "electron",
+    "autocuts"
+  ],
+  "homepage": "https://github.com/xenomarz/autocuts-electron",
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components",
+    "test",
+    "tests"
+  ],
+  "dependencies": {
+    "polymer": "Polymer/polymer#^2.6.0",
+    "vaadin": "^10.0.0-beta7",
+    "iron-meta": "PolymerElements/iron-meta#^2.1.1",
+    "iron-selector": "PolymerElements/iron-selector#^2.1.0",
+    "three.js": "three#*"
+  }
+}

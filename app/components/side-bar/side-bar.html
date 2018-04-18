@@ -1,0 +1,68 @@
+<link rel="import" href="../../bower_components/vaadin-icons/vaadin-icons.html">
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/vaadin-button/vaadin-button.html">
+<link rel="import" href="../../bower_components/vaadin-checkbox/vaadin-checkbox.html">
+<link rel="import" href="../../bower_components/vaadin-dropdown-menu/vaadin-dropdown-menu.html">
+<link rel="import" href="../../bower_components/vaadin-text-field/vaadin-text-field.html">
+<link rel="import" href="../../bower_components/vaadin-item/vaadin-item.html">
+<link rel="import" href="../../bower_components/vaadin-icons/vaadin-icons.html">
+<link rel="import" href="../../bower_components/paper-toggle-button/paper-toggle-button.html">
+<link rel="import" href="../side-bar-section/side-bar-section.html">
+
+<dom-module id="side-bar">
+  <template>
+    <style>
+      :host {
+          padding-left: 15px;
+          padding-right: 15px;
+          display: flex;
+          flex-direction: column;
+          width: 300px;
+          align-items: stretch;
+          background-color: #d8d8d8;
+      }
+    </style>
+    <side-bar-section title="Mesh Options">
+        <vaadin-button theme="contrast primary" on-click="loadMesh">
+            <iron-icon icon="vaadin:plus" slot="prefix"></iron-icon>
+            <span>Load Mesh...</span>
+        </vaadin-button>
+        <vaadin-checkbox checked>Wireframe</vaadin-checkbox>
+    </side-bar-section>
+    <side-bar-section title="Energy Parameters">
+        <vaadin-text-field prevent-invalid-input pattern="[+-]?([0-9]*[.])?[0-9]+" label="Lambda"></vaadin-text-field>
+        <vaadin-text-field prevent-invalid-input pattern="[+-]?([0-9]*[.])?[0-9]+" label="Delta"></vaadin-text-field>
+      </side-bar-section>
+      <side-bar-section title="Tools">
+        <vaadin-dropdown-menu placeholder="Editing Tool" value="camera">
+          <template>
+            <vaadin-list-box>
+              <vaadin-item value="camera">Camera</vaadin-item>
+              <vaadin-item value="select">Select</vaadin-item>
+              <vaadin-item value="draw">Draw</vaadin-item>
+              <vaadin-item value="drag">Drag</vaadin-item>
+            </vaadin-list-box>
+          </template>
+        </vaadin-dropdown-menu>
+      </side-bar-section>
+      <side-bar-section title="Solver">
+        <paper-toggle-button>On</paper-toggle-button>
+      </side-bar-section>
+  </template>
+  <script>
+    class SideBar extends Polymer.Element {
+      static get is() { 
+        return "side-bar";
+      }
+
+      loadMesh() {
+        const dialog = require('electron').remote.dialog;
+        let files = dialog.showOpenDialog({
+          properties: ['openFile'],
+          filters: [{name: 'Mesh Files', extensions: ['obj', 'off']}, {name: 'All Files', extensions: ['*']}]
+        });
+      }
+    }
+    customElements.define(SideBar.is, SideBar);
+  </script>
+</dom-module>
