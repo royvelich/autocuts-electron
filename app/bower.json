@@ -23,6 +23,7 @@
     "vaadin": "^10.0.0-beta7",
     "iron-meta": "PolymerElements/iron-meta#^2.1.1",
     "iron-selector": "PolymerElements/iron-selector#^2.1.0",
-    "three.js": "three#*"
+    "three.js": "three#*",
+    "paper-toggle-button": "^2.1.1"
   }
 }
