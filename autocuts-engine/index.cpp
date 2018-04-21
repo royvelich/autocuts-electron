@@ -125,6 +125,10 @@ NAN_METHOD(loadMeshWithSoup)
 
 	// Create the an object that will be used to return the vertices and faces of the original mesh and the solved parameterization
 	auto meshWithSoup = Nan::New<v8::Object>();
+	auto meshData = Nan::New<v8::Object>();
+	auto solverData = Nan::New<v8::Object>();
+	meshWithSoup->Set(Nan::New("meshData").ToLocalChecked(), meshData);
+	meshWithSoup->Set(Nan::New("solverData").ToLocalChecked(), solverData);
 
 	// Create and array that will hold all the vertices of the original mesh, and add it to the 'meshVertices' property of 'meshWithSoup'
 	auto meshVertices = Nan::New<v8::Array>();
@@ -137,7 +141,7 @@ NAN_METHOD(loadMeshWithSoup)
 		meshVertices->Set(i, vertex);
 	}
 
-	meshWithSoup->Set(Nan::New("meshVertices").ToLocalChecked(), meshVertices);
+	meshData->Set(Nan::New("vertices").ToLocalChecked(), meshVertices);
 
 	// Create and array that will hold all the faces of the original mesh, and add it to the 'meshFaces' property of 'meshWithSoup'
 	auto meshFaces = Nan::New<v8::Array>();
@@ -150,7 +154,7 @@ NAN_METHOD(loadMeshWithSoup)
 		meshFaces->Set(i, face);
 	}
 
-	meshWithSoup->Set(Nan::New("meshFaces").ToLocalChecked(), meshFaces);
+	meshData->Set(Nan::New("faces").ToLocalChecked(), meshFaces);
 
 	// Create and array that will hold all the vertices of the solved parameterization, and add it to the 'solverVertices' property of 'meshWithSoup'
 	auto solverVertices = Nan::New<v8::Array>();
@@ -163,7 +167,7 @@ NAN_METHOD(loadMeshWithSoup)
 		solverVertices->Set(i, vertex);
 	}
 
-	meshWithSoup->Set(Nan::New("solverVertices").ToLocalChecked(), solverVertices);
+	solverData->Set(Nan::New("vertices").ToLocalChecked(), solverVertices);
 
 	// Create and array that will hold all the faces of the solved parameterization, and add it to the 'solverFaces' property of 'meshWithSoup'
 	auto solverFaces = Nan::New<v8::Array>();
@@ -176,7 +180,7 @@ NAN_METHOD(loadMeshWithSoup)
 		solverFaces->Set(i, face);
 	}
 
-	meshWithSoup->Set(Nan::New("solverFaces").ToLocalChecked(), solverFaces);
+	solverData->Set(Nan::New("faces").ToLocalChecked(), solverFaces);
 
 	// Return the object
 	info.GetReturnValue().Set(meshWithSoup);
