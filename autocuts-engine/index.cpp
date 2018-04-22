@@ -115,7 +115,7 @@ NAN_METHOD(loadMeshWithSoup)
 	// Scale all points by '1/maxDist' such that their coordinates will be normalized to [-1, 1] domain
 	V.col(0).array() /= maxDist;
 	V.col(1).array() /= maxDist;
-	V.col(2).array() /= maxDist;
+	V.col(2).array() *= 0;
 
 	// Solve the parametrization of the mesh
 	solver_wrapper = new SolverWrapper();
@@ -147,10 +147,10 @@ NAN_METHOD(loadMeshWithSoup)
 	auto meshFaces = Nan::New<v8::Array>();
 	for (auto i = 0; i < F.rows(); ++i) 
 	{
-		auto face = Nan::New<v8::Object>();
-		face->Set(Nan::New("v1").ToLocalChecked(), Nan::New<v8::Number>(F(i, 0)));
-		face->Set(Nan::New("v2").ToLocalChecked(), Nan::New<v8::Number>(F(i, 1)));
-		face->Set(Nan::New("v3").ToLocalChecked(), Nan::New<v8::Number>(F(i, 2)));
+		auto face = Nan::New<v8::Array>();
+		face->Set(0, Nan::New<v8::Number>(F(i, 0)));
+		face->Set(1, Nan::New<v8::Number>(F(i, 1)));
+		face->Set(2, Nan::New<v8::Number>(F(i, 2)));
 		meshFaces->Set(i, face);
 	}
 
@@ -173,10 +173,10 @@ NAN_METHOD(loadMeshWithSoup)
 	auto solverFaces = Nan::New<v8::Array>();
 	for (auto i = 0; i < Fs.rows(); ++i)
 	{
-		auto face = Nan::New<v8::Object>();
-		face->Set(Nan::New("v1").ToLocalChecked(), Nan::New<v8::Number>(Fs(i, 0)));
-		face->Set(Nan::New("v2").ToLocalChecked(), Nan::New<v8::Number>(Fs(i, 1)));
-		face->Set(Nan::New("v3").ToLocalChecked(), Nan::New<v8::Number>(Fs(i, 2)));
+		auto face = Nan::New<v8::Array>();
+		face->Set(0, Nan::New<v8::Number>(Fs(i, 0)));
+		face->Set(1, Nan::New<v8::Number>(Fs(i, 1)));
+		face->Set(2, Nan::New<v8::Number>(Fs(i, 2)));
 		solverFaces->Set(i, face);
 	}
 

@@ -1,0 +1,106 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/vaadin-split-layout/vaadin-split-layout.html">
+
+<link rel="import" href="../../components/mesh-view/mesh-view.html">
+<link rel="import" href="../autocuts-side-bar/autocuts-side-bar.html">
+<link rel="import" href="../autocuts-redux/autocuts-redux.html">
+
+<dom-module id="autocuts-view">
+  <template>
+    <style>
+      :host {
+        display: flex;
+        width: 100%;
+        height: 100%;
+      }
+
+      .outer-split {
+        flex: 1;
+      }
+
+      .inner-split {
+        width: 100%;
+        height: 100%;
+      }
+    </style>
+    <vaadin-split-layout class="outer-split">
+      <autocuts-side-bar></autocuts-side-bar>
+      <vaadin-split-layout orientation="[[splitOrientation]]" class="inner-split">
+        <mesh-view title="Mesh View" show-wireframe="[[showWireframe]]" background-color="[[meshViewportColor]]" data="{{meshData}}"></mesh-view>
+        <mesh-view title="Solver View" show-wireframe="[[showWireframe]]" background-color="[[solverViewportColor]]" data="{{solverData}}"></mesh-view>
+      </vaadin-split-layout>
+    </vaadin-split-layout>
+  </template>
+  <script>
+    class AutocutsView extends ReduxMixin(Polymer.Element) {
+      static get is() {
+        return "autocuts-view";
+      }
+
+      static get properties() {
+        return {
+          meshViewportColor: {
+            type: String,
+            statePath: 'meshViewportColor',
+          },
+          solverViewportColor: {
+            type: String,
+            statePath: 'solverViewportColor',
+          },
+          showWireframe: {
+            type: Boolean,
+            statePath: 'showWireframe',
+          },
+        };
+      }
+
+      ready() {
+        this.splitOrientation = 'vertical';
+        this.meshViewResizeSubscriptionToken = require('pubsub-js').subscribe('reload-module', () => {
+
+
+          const fs = require('fs');
+          let files = [];
+
+          fs.readdirSync('../autocuts-engine/build/latest-builds/').forEach(file => {
+            files.push(file);
+          });
+
+          files.sort(function (a, b) {
+            return a.localeCompare(b);
+          });
+
+
+          this.autocutsEngine = require('../autocuts-engine/build/latest-builds/' + files[files.length - 1]);
+          this.meshWithSoup = this.autocutsEngine.loadMeshWithSoup(this.filename);
+          this.meshData = this.meshWithSoup.meshData;
+          this.solverData = this.meshWithSoup.solverData;
+        });
+
+        this.autocutsEngine = require(
+          '../autocuts-engine/build/latest-builds/autocuts-engine_2018_04_22_21_57_26.node');
+        this.addEventListener('mesh-files-loaded', this._meshFilesLoaded);
+        this.addEventListener('split-orientation-changed', this._splitOrientationChanged);
+        super.ready();
+      }
+
+      _meshFilesLoaded(e) {
+        this.meshWithSoup = this.autocutsEngine.loadMeshWithSoup(e.detail.files[0]);
+        this.meshData = this.meshWithSoup.meshData;
+        this.solverData = this.meshWithSoup.solverData;
+        this.filename = e.detail.files[0];
+      }
+
+      // _meshFilesLoaded2() {
+      //   this.meshWithSoup = this.autocutsEngine.loadMeshWithSoup(this.filename);
+      //   this.meshData = this.meshWithSoup.meshData;
+      //   this.solverData = this.meshWithSoup.solverData;
+      // }
+
+      _splitOrientationChanged(e) {
+        this.splitOrientation = e.detail.splitOrinetation;
+      }
+    }
+    customElements.define(AutocutsView.is, AutocutsView);
+  </script>
+</dom-module>

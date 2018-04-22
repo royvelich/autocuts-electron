@@ -1,121 +1,15 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
-<link rel="import" href="../../bower_components/vaadin-button/vaadin-button.html">
-<link rel="import" href="../../bower_components/vaadin-checkbox/vaadin-checkbox.html">
-<link rel="import" href="../../bower_components/vaadin-dropdown-menu/vaadin-dropdown-menu.html">
-<link rel="import" href="../../bower_components/vaadin-text-field/vaadin-text-field.html">
-<link rel="import" href="../../bower_components/vaadin-item/vaadin-item.html">
-<link rel="import" href="../../bower_components/vaadin-icons/vaadin-icons.html">
-<link rel="import" href="../../bower_components/paper-toggle-button/paper-toggle-button.html">
-<link rel="import" href="../../bower_components/neon-animation/web-animations.html">
-<link rel="import" href="../../bower_components/paper-swatch-picker/paper-swatch-picker.html">
-<link rel="import" href="../side-bar-section/side-bar-section.html">
-
+<link rel="import" href="side-bar-style-module.html">
 <dom-module id="side-bar">
   <template>
     <style>
-      :host {
-          padding-left: 15px;
-          padding-right: 15px;
-          display: flex;
-          flex-direction: column;
-          width: 250px;
-          align-items: stretch;
-          background-color: #d8d8d8;
-
-          --paper-menu-button: {
-            padding: 0px;
-          };
-
-          --paper-icon-button: {
-            padding: 4px;
-            margin-right: 8px;
-          };
-
-          --lumo-space-m: 0px;
-      }
-
-      .viewport-color-picker-container {
-        display: flex;
-        flex-direction: row;
-        align-items: flex-end;
-      }
     </style>
-    <side-bar-section title="Mesh Options">
-        <vaadin-button theme="contrast primary" on-click="_loadMesh">
-            <iron-icon icon="vaadin:plus" slot="prefix"></iron-icon>
-            <span>Load Mesh...</span>
-        </vaadin-button>
-        <vaadin-checkbox checked>Wireframe</vaadin-checkbox>
-    </side-bar-section>
-    <side-bar-section title="Energy Parameters">
-        <vaadin-text-field prevent-invalid-input pattern="[+-]?([0-9]*[.])?[0-9]+" label="Lambda"></vaadin-text-field>
-        <vaadin-text-field prevent-invalid-input pattern="[+-]?([0-9]*[.])?[0-9]+" label="Delta"></vaadin-text-field>
-      </side-bar-section>
-      <side-bar-section title="Tools">
-        <vaadin-dropdown-menu label="Editing Tool" value="camera" on-value-changed="_editingToolChanged">
-          <template>
-            <vaadin-list-box>
-              <vaadin-item value="camera">Camera</vaadin-item>
-              <vaadin-item value="select">Select</vaadin-item>
-              <vaadin-item value="draw">Draw</vaadin-item>
-              <vaadin-item value="drag">Drag</vaadin-item>
-            </vaadin-list-box>
-          </template>
-        </vaadin-dropdown-menu>
-      </side-bar-section>
-      <side-bar-section title="Solver">
-        <paper-toggle-button>On</paper-toggle-button>
-      </side-bar-section>
-      <side-bar-section title="Viewports">
-        <vaadin-dropdown-menu label="Split Orientation" value="vertical" on-value-changed="_splitOrientationChanged">
-          <template>
-            <vaadin-list-box>
-              <vaadin-item value="vertical">Vertical</vaadin-item>
-              <vaadin-item value="horizontal">Horizontal</vaadin-item>
-            </vaadin-list-box>
-          </template>
-        </vaadin-dropdown-menu>
-        <div class="viewport-color-picker-container">
-          <paper-swatch-picker on-color-changed='_meshViewportColorChanged'></paper-swatch-picker>
-          <div>Mesh Viewport Color</div>
-        </div>
-        <div class="viewport-color-picker-container">
-          <paper-swatch-picker on-color-changed='_solverViewportColorChanged'></paper-swatch-picker>
-          <div>Solver Viewport Color</div>
-        </div>
-      </side-bar-section>
   </template>
   <script>
     class SideBar extends Polymer.Element {
       static get is() { 
         return "side-bar";
       }
-
-      _loadMesh() {
-        const dialog = require('electron').remote.dialog;
-        let files = dialog.showOpenDialog({
-          properties: ['openFile'],
-          filters: [{name: 'Mesh Files', extensions: ['obj', 'off']}, {name: 'All Files', extensions: ['*']}]
-        });
-
-        this.dispatchEvent(new CustomEvent('mesh-files-loaded',  {bubbles: true, composed: true, detail: {files: files}}));
-      }
-
-      _splitOrientationChanged(e) {
-        this.dispatchEvent(new CustomEvent('split-orientation-changed',  {bubbles: true, composed: true, detail: {splitOrinetation: e.detail.value}}));
-      }
-
-      _editingToolChanged(e) {
-        this.dispatchEvent(new CustomEvent('editing-tool-changed',  {bubbles: true, composed: true, detail: {editingTool: e.detail.value}}));
-      }
-
-      _meshViewportColorChanged(e) {
-        this.dispatchEvent(new CustomEvent('mesh-viewport-color-changed',  {bubbles: true, composed: true, detail: {color: e.detail.value}}));
-      }
-
-      _solverViewportColorChanged(e) {
-        this.dispatchEvent(new CustomEvent('solver-viewport-color-changed',  {bubbles: true, composed: true, detail: {color: e.detail.value}}));
-      }      
     }
     customElements.define(SideBar.is, SideBar);
   </script>

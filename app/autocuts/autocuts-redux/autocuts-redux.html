@@ -1,0 +1,42 @@
+<link rel="import" href="../../bower_components/polymer/polymer-element.html">
+<link rel="import" href="../../bower_components/polymer-redux/polymer-redux.html">
+
+<script>
+  const initialState = {
+    splitOrientation: 'vertical',
+    editingTool: 'camera',
+    showWireframe: true,
+    meshViewportColor: 'rgb(0,0,0)',
+    solverViewportColor: 'rgb(0,0,0)'
+  };
+
+  const reducer = (state, action) => {
+    if (!state) {
+      return initialState;
+    }
+
+    stateDelta = {};
+    switch (action.type) {
+      case 'CHANGE_SPLIT_ORIENTATION':
+        stateDelta.splitOrientation = action.splitOrientation;
+        break;
+      case 'CHANGE_EDITING_TOOL':
+        stateDelta.editingTool = action.editingTool;
+        break;
+      case 'CHANGE_MESH_VIEWPORT_COLOR':
+        stateDelta.meshViewportColor = action.color;
+        break;
+      case 'CHANGE_SOLVER_VIEWPORT_COLOR':
+        stateDelta.solverViewportColor = action.color;
+        break;
+      case 'CHANGE_SHOW_WIREFRAME':
+        stateDelta.showWireframe = action.showWireframe;
+        break;
+    }
+    return Object.assign({}, state, stateDelta);
+  };
+
+  let Redux = require('redux');
+  const store = Redux.createStore(reducer);
+  const ReduxMixin = PolymerRedux(store);
+</script>

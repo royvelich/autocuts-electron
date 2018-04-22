@@ -17,6 +17,7 @@
     "electron": "^1.8.4",
     "gulp-git": "^2.5.2",
     "nan": "^2.10.0",
+    "pubsub-js": "^1.6.0",
     "redux": "^4.0.0",
     "resize-observer-polyfill": "^1.5.0",
     "three": "^0.92.0",

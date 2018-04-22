@@ -31,15 +31,17 @@
                     "OpenMP": "true",
                     "PreprocessorDefinitions": ["NOMINMAX"]
                   }
-                }
+                },
+                "msvs_postbuild": "call $(ProjectDir)..\post-build.bat $(TargetDir)$(TargetFileName) $(ProjectDir)latest-builds\\"
               },
               "Debug": {
                 "msvs_settings": {
                   "VCCLCompilerTool": {
                     "OpenMP": "true",
                     "PreprocessorDefinitions": ["NOMINMAX"]
-                  }
-                }
+                  },
+                },
+                "msvs_postbuild": "call $(ProjectDir)..\post-build.bat $(TargetDir)$(TargetFileName) $(ProjectDir)latest-builds\\"
               }
             }
           }
