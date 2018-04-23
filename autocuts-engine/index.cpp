@@ -272,6 +272,24 @@ NAN_METHOD(decreaseDelta) {
   info.GetReturnValue().Set(Nan::New<v8::Number>(solver_wrapper->solver->energy->separation->delta));
 }
 
+NAN_METHOD(setDelta) {
+	auto delta = info[0]->ToNumber();
+	update_energy_param(Param::DELTA, delta->Value());
+}
+
+NAN_METHOD(setLambda) {
+	auto lambda = info[0]->ToNumber();
+	update_energy_param(Param::LAMBDA, lambda->Value());
+}
+
+NAN_METHOD(getDelta) {
+	info.GetReturnValue().Set(Nan::New<v8::Number>(solver_wrapper->solver->energy->separation->delta));
+}
+
+NAN_METHOD(getLambda) {
+	info.GetReturnValue().Set(Nan::New<v8::Number>(solver_wrapper->solver->energy->lambda));
+}
+
 void Init(v8::Local<v8::Object> exports) {
     NAN_EXPORT(exports, loadMeshWithSoup);
     NAN_EXPORT(exports, startSolver);
@@ -281,6 +299,11 @@ void Init(v8::Local<v8::Object> exports) {
     NAN_EXPORT(exports, decreaseLambda);
     NAN_EXPORT(exports, increaseDelta);
     NAN_EXPORT(exports, decreaseDelta);
+
+	NAN_EXPORT(exports, setDelta);
+	NAN_EXPORT(exports, setLambda);
+	NAN_EXPORT(exports, getDelta);
+	NAN_EXPORT(exports, getLambda);
 }
 
 NODE_MODULE(addon, Init)

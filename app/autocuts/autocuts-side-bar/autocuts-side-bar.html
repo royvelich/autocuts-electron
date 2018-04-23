@@ -37,6 +37,10 @@
         flex-direction: row;
         align-items: flex-end;
       }
+
+      .parameter-icon {
+        cursor: pointer;
+      }
     </style>
     <side-bar-section title="Mesh Options">
       <vaadin-button theme="contrast primary" on-click="_loadMesh">
@@ -46,8 +50,14 @@
       <vaadin-checkbox on-checked-changed="_showWireframeChanged" checked>Show Wireframe</vaadin-checkbox>
     </side-bar-section>
     <side-bar-section title="Energy Parameters">
-      <vaadin-text-field prevent-invalid-input pattern="[+-]?([0-9]*[.])?[0-9]+" label="Lambda"></vaadin-text-field>
-      <vaadin-text-field prevent-invalid-input pattern="[+-]?([0-9]*[.])?[0-9]+" label="Delta"></vaadin-text-field>
+      <vaadin-text-field prevent-invalid-input value="{{lambda}}" pattern="[+-]?([0-9]*[.])?[0-9]+" label="Lambda">
+        <iron-icon icon="vaadin:minus" slot="prefix" class="parameter-icon" on-click="_decreaseLambda"></iron-icon>
+        <iron-icon icon="vaadin:plus" slot="suffix" class="parameter-icon" on-click="_increaseLambda"></iron-icon>
+      </vaadin-text-field>
+      <vaadin-text-field prevent-invalid-input value="{{delta}}" pattern="[+-]?([0-9]*[.])?[0-9]+" label="Delta">
+        <iron-icon icon="vaadin:minus" slot="prefix" class="parameter-icon" on-click="_decreaseDelta"></iron-icon>
+        <iron-icon icon="vaadin:plus" slot="suffix" class="parameter-icon" on-click="_increaseDelta"></iron-icon>
+      </vaadin-text-field>
     </side-bar-section>
     <side-bar-section title="Tools">
       <vaadin-dropdown-menu label="Editing Tool" value="camera" on-value-changed="_editingToolChanged">
@@ -92,6 +102,23 @@
     class AutocutsSideBar extends ReduxMixin(Polymer.Element) {
       static get is() {
         return "autocuts-side-bar";
+      }
+
+      static get properties() {
+        return {
+          lambda: {
+            type: Number,
+            value: function () {
+              return 0;
+            }
+          },
+          delta: {
+            type: Number,
+            value: function () {
+              return 1;
+            }
+          }
+        };
       }
 
       static get actions() {
@@ -174,6 +201,26 @@
 
       _showWireframeChanged(e) {
         this.dispatch('changeShowWireframe', e.detail.value);
+      }
+
+      _decreaseLambda() {
+        this.lambda = this._roundToPrecision(parseFloat(this.lambda, ) - 0.1, 2);
+      }
+
+      _increaseLambda() {
+        this.lambda = this._roundToPrecision(parseFloat(this.lambda) + 0.1, 2);
+      }
+
+      _decreaseDelta() {
+        this.delta = this._roundToPrecision(parseFloat(this.delta) - 0.1, 2);
+      }
+
+      _increaseDelta() {
+        this.delta = this._roundToPrecision(parseFloat(this.delta) + 0.1, 2);
+      }
+
+      _roundToPrecision(num, precision) {
+        return parseFloat(Math.round(num * Math.pow(10, precision)) / Math.pow(10, precision));
       }
     }
     customElements.define(AutocutsSideBar.is, AutocutsSideBar);
