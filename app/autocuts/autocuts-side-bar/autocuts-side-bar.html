@@ -72,7 +72,7 @@
       </vaadin-dropdown-menu>
     </side-bar-section>
     <side-bar-section title="Solver">
-      <paper-toggle-button>On</paper-toggle-button>
+      <paper-toggle-button class="solver" disabled>[[_getSolverText()]]</paper-toggle-button>
     </side-bar-section>
     <side-bar-section title="Viewports">
       <vaadin-dropdown-menu label="Split Orientation" value="vertical" on-value-changed="_splitOrientationChanged">
@@ -110,13 +110,22 @@
             type: Number,
             value: function () {
               return 0;
-            }
+            },
+            observer: '_setLambda'
           },
           delta: {
             type: Number,
             value: function () {
               return 1;
-            }
+            },
+            observer: '_setDelta'
+          },
+          solverRunning: {
+            type: Boolean,
+            value: function () {
+              return false;
+            },
+            observer: '_solverRunningChanged'
           }
         };
       }
@@ -140,8 +149,37 @@
               type: 'CHANGE_SHOW_WIREFRAME',
               showWireframe: showWireframe
             };
+          },
+          changeDelta: (delta) => {
+            return {
+              type: 'CHANGE_DELTA',
+              delta: delta
+            };
+          },
+          changeLambda: (lambda) => {
+            return {
+              type: 'CHANGE_LAMBDA',
+              lambda: lambda
+            };
           }
         };
+      }
+
+      ready() {
+        this.reloadMeshSubscriptionToken = require('pubsub-js').subscribe('reload-mesh', (name, payload) => {
+          let solverToggleButton = this.root.querySelector(".solver");
+          solverToggleButton.disabled = false;
+        });
+
+        super.ready();
+      }
+
+      _getSolverText() {
+        if (this.solverRunning) {
+          return 'On';
+        }
+
+        return 'Off';
       }
 
       _loadMesh() {
@@ -157,13 +195,9 @@
           }]
         });
 
-        this.dispatchEvent(new CustomEvent('mesh-files-loaded', {
-          bubbles: true,
-          composed: true,
-          detail: {
-            files: files
-          }
-        }));
+        require('pubsub-js').publish('reload-mesh', {
+          meshFilename: files[0]
+        });
       }
 
       _reloadModule() {
@@ -221,6 +255,18 @@
 
       _roundToPrecision(num, precision) {
         return parseFloat(Math.round(num * Math.pow(10, precision)) / Math.pow(10, precision));
+      }
+
+      _setDelta(delta) {
+        this.dispatch('changeDelta', delta);
+      }
+
+      _setLambda(lambda) {
+        this.dispatch('changeLambda', lambda);
+      }
+
+      _solverRunningChanged(running) {
+
       }
     }
     customElements.define(AutocutsSideBar.is, AutocutsSideBar);

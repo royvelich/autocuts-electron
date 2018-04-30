@@ -51,54 +51,83 @@
             type: Boolean,
             statePath: 'showWireframe',
           },
+          delta: {
+            type: Boolean,
+            statePath: 'delta',
+            observer: '_deltaChanged'
+          },
+          lambda: {
+            type: Boolean,
+            statePath: 'lambda',
+            observer: '_lambdaChanged'
+          },
+          splitOrientation: {
+            type: String,
+            statePath: 'splitOrientation'
+          },
+          meshFilename: {
+            type: String
+          }
         };
       }
 
-      ready() {
-        this.splitOrientation = 'vertical';
-        this.meshViewResizeSubscriptionToken = require('pubsub-js').subscribe('reload-module', () => {
+      _getLatestModulePath() {
+        const fs = require('fs');
+        let files = [];
+        let relativeBasePath = '../autocuts-engine/build/latest-builds/';
 
-
-          const fs = require('fs');
-          let files = [];
-
-          fs.readdirSync('../autocuts-engine/build/latest-builds/').forEach(file => {
-            files.push(file);
-          });
-
-          files.sort(function (a, b) {
-            return a.localeCompare(b);
-          });
-
-
-          this.autocutsEngine = require('../autocuts-engine/build/latest-builds/' + files[files.length - 1]);
-          this.meshWithSoup = this.autocutsEngine.loadMeshWithSoup(this.filename);
-          this.meshData = this.meshWithSoup.meshData;
-          this.solverData = this.meshWithSoup.solverData;
+        fs.readdirSync(relativeBasePath).forEach(file => {
+          files.push(file);
         });
 
-        this.autocutsEngine = require(
-          '../autocuts-engine/build/latest-builds/autocuts-engine_2018_04_22_21_57_26.node');
+        files.sort(function (a, b) {
+          return a.localeCompare(b);
+        });
+
+        return relativeBasePath + files[files.length - 1];
+      }
+
+      ready() {
+        this.reloadMeshSubscriptionToken = require('pubsub-js').subscribe('reload-mesh', (name, payload) => {
+          this._reloadMesh(payload.meshFilename);
+        });
+
+        this.reloadModuleSubscriptionToken = require('pubsub-js').subscribe('reload-module', () => {
+          this._reloadModule();
+        });
+
         this.addEventListener('mesh-files-loaded', this._meshFilesLoaded);
         this.addEventListener('split-orientation-changed', this._splitOrientationChanged);
+        this.addEventListener('lambda-changed', this._lambdaChanged);
+        this.addEventListener('delta-changed', this._deltaChanged);
+
+        this.autocutsEngine = require(this._getLatestModulePath());
+
         super.ready();
       }
 
-      _meshFilesLoaded(e) {
-        this.meshWithSoup = this.autocutsEngine.loadMeshWithSoup(e.detail.files[0]);
+      _reloadMesh(meshFilename) {
+        this.meshWithSoup = this.autocutsEngine.loadMeshWithSoup(meshFilename);
         this.meshData = this.meshWithSoup.meshData;
         this.solverData = this.meshWithSoup.solverData;
-        this.filename = e.detail.files[0];
+        this.meshFilename = meshFilename;
       }
 
-      // _meshFilesLoaded2() {
-      //   this.meshWithSoup = this.autocutsEngine.loadMeshWithSoup(this.filename);
-      //   this.meshData = this.meshWithSoup.meshData;
-      //   this.solverData = this.meshWithSoup.solverData;
-      // }
+      _reloadModule() {
+        this.autocutsEngine = require(this._getLatestModulePath());
+        this._reloadMesh(this.meshFilename);
+      }
 
       _splitOrientationChanged(e) {
         this.splitOrientation = e.detail.splitOrinetation;
+      }
+
+      _lambdaChanged(lambda) {
+        this.autocutsEngine.setLambda(lambda);
+      }
+
+      _deltaChanged(delta) {
+        this.autocutsEngine.setDelta(delta);
       }
     }
     customElements.define(AutocutsView.is, AutocutsView);

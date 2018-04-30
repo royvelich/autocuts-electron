@@ -5,11 +5,12 @@
 #include <algorithm>
 #include <string>
 #include <iostream>
+#include <memory>
 
 #include "Utils.h"
 #include "SolverWrapper.h"
 
-SolverWrapper* solver_wrapper;
+std::shared_ptr<SolverWrapper> solver_wrapper;
 thread solver_thread;
 
 enum class Param 
@@ -115,10 +116,10 @@ NAN_METHOD(loadMeshWithSoup)
 	// Scale all points by '1/maxDist' such that their coordinates will be normalized to [-1, 1] domain
 	V.col(0).array() /= maxDist;
 	V.col(1).array() /= maxDist;
-	V.col(2).array() *= 0;
+	V.col(2).array() /= maxDist;
 
 	// Solve the parametrization of the mesh
-	solver_wrapper = new SolverWrapper();
+	solver_wrapper = std::make_shared<SolverWrapper>();
 	solver_wrapper->init(V, F, V, F, Utils::Init::RANDOM);
 	MatX2 Vs = solver_wrapper->solver->Vs;
 	MatX3i Fs = solver_wrapper->solver->Fs;
@@ -186,120 +187,105 @@ NAN_METHOD(loadMeshWithSoup)
 	info.GetReturnValue().Set(meshWithSoup);
 }
 
-NAN_METHOD(startSolver) {
-  solver_thread = thread(&Solver::run, solver_wrapper->solver.get());
-  solver_thread.detach();
+NAN_METHOD(startSolver)
+{
+	solver_thread = std::thread([]() {
+		solver_wrapper->solver->run();
+	});
+	solver_thread.detach();
 }
 
-NAN_METHOD(solverProgressed) {
-  auto has_progressed = solver_wrapper->progressed();
-  auto progressed = Nan::New<v8::Boolean>(has_progressed);
-
-  info.GetReturnValue().Set(progressed);
+NAN_METHOD(stopSolver)
+{
+	solver_wrapper->solver->stop();
 }
 
-NAN_METHOD(getUpdatedMesh) {
-  MatX2 Xnew;
-  solver_wrapper->solver->get_mesh(Xnew);
+NAN_METHOD(solverProgressed)
+{
+	auto has_progressed = solver_wrapper->progressed();
+	auto progressed = Nan::New<v8::Boolean>(has_progressed);
 
-  auto result_list = Nan::New<v8::Array>();
-
-  auto obj = Nan::New<v8::Object>();
-  obj->Set(0, Nan::New<v8::Number>(Xnew.rows()));
-  result_list->Set(0, obj);
-
-  for (auto i = 0; i < Xnew.rows(); ++i) {
-    auto o = Nan::New<v8::Object>();
-    o->Set(0, Nan::New<v8::Number>(Xnew(i, 0)));
-    o->Set(1, Nan::New<v8::Number>(Xnew(i, 1)));
-    o->Set(2, Nan::New<v8::Number>(0));
-    result_list->Set(i + 1, o);
-  }
-
-  info.GetReturnValue().Set(result_list);
+	info.GetReturnValue().Set(progressed);
 }
 
-static void update_energy_param(Param p, double value) {
-  switch (p)
-  {
-  case Param::LAMBDA:
-    solver_wrapper->set_lambda(value);
-    break;
-  case Param::DELTA:
-    solver_wrapper->set_delta(value);
-    break;
-  case Param::BOUND:
-    solver_wrapper->set_bound(value);
-    break;
-  case Param::POSITION_WEIGHT:
-    solver_wrapper->set_position_weight(value);
-    break;
-  default:
-    assert(false && "Unknown energy parameter");
-  }
+NAN_METHOD(getUpdatedMesh)
+{
+	MatX2 Xnew;
+	solver_wrapper->solver->get_mesh(Xnew);
+
+	auto result_list = Nan::New<v8::Array>();
+
+	auto obj = Nan::New<v8::Object>();
+	obj->Set(0, Nan::New<v8::Number>(Xnew.rows()));
+	result_list->Set(0, obj);
+
+	for (auto i = 0; i < Xnew.rows(); ++i) {
+	auto o = Nan::New<v8::Object>();
+	o->Set(0, Nan::New<v8::Number>(Xnew(i, 0)));
+	o->Set(1, Nan::New<v8::Number>(Xnew(i, 1)));
+	o->Set(2, Nan::New<v8::Number>(0));
+	result_list->Set(i + 1, o);
+	}
+
+	info.GetReturnValue().Set(result_list);
 }
 
-NAN_METHOD(increaseLambda) {
-  if (solver_wrapper->solver->energy->lambda <= 0.98)
-  {
-    if (solver_wrapper->solver->energy->lambda >= 0.85)
-      update_energy_param(Param::LAMBDA, solver_wrapper->solver->energy->lambda + 0.01);
-    else if (solver_wrapper->solver->energy->lambda <= 0.9)
-      update_energy_param(Param::LAMBDA, solver_wrapper->solver->energy->lambda + 0.1);
-  }
-
-  info.GetReturnValue().Set(Nan::New<v8::Number>(solver_wrapper->solver->energy->lambda));
+static void update_energy_param(Param p, double value) 
+{
+	switch (p)
+	{
+	case Param::LAMBDA:
+		solver_wrapper->set_lambda(value);
+		break;
+	case Param::DELTA:
+		solver_wrapper->set_delta(value);
+		break;
+	case Param::BOUND:
+		solver_wrapper->set_bound(value);
+		break;
+	case Param::POSITION_WEIGHT:
+		solver_wrapper->set_position_weight(value);
+		break;
+	default:
+		assert(false && "Unknown energy parameter");
+	}
 }
 
-NAN_METHOD(decreaseLambda) {
-  if (solver_wrapper->solver->energy->lambda > 0.9)
-    update_energy_param(Param::LAMBDA, solver_wrapper->solver->energy->lambda - 0.01);
-  else if (solver_wrapper->solver->energy->lambda >= 0.1)
-    update_energy_param(Param::LAMBDA, solver_wrapper->solver->energy->lambda - 0.1);
-
-  info.GetReturnValue().Set(Nan::New<v8::Number>(solver_wrapper->solver->energy->lambda));
+NAN_METHOD(setDelta)
+{
+	if (solver_wrapper)
+	{
+		auto delta = info[0]->ToNumber();
+		solver_wrapper->set_delta(delta->Value());
+	}
 }
 
-NAN_METHOD(increaseDelta) {
-  update_energy_param(Param::DELTA, solver_wrapper->solver->energy->separation->delta * 2.0);
-
-  info.GetReturnValue().Set(Nan::New<v8::Number>(solver_wrapper->solver->energy->separation->delta));
+NAN_METHOD(setLambda)
+{
+	if (solver_wrapper)
+	{
+		auto lambda = info[0]->ToNumber();
+		solver_wrapper->set_lambda(lambda->Value());
+	}
 }
 
-NAN_METHOD(decreaseDelta) {
-  update_energy_param(Param::DELTA, solver_wrapper->solver->energy->separation->delta * 0.5);
-
-  info.GetReturnValue().Set(Nan::New<v8::Number>(solver_wrapper->solver->energy->separation->delta));
-}
-
-NAN_METHOD(setDelta) {
-	auto delta = info[0]->ToNumber();
-	update_energy_param(Param::DELTA, delta->Value());
-}
-
-NAN_METHOD(setLambda) {
-	auto lambda = info[0]->ToNumber();
-	update_energy_param(Param::LAMBDA, lambda->Value());
-}
-
-NAN_METHOD(getDelta) {
+NAN_METHOD(getDelta)
+{
 	info.GetReturnValue().Set(Nan::New<v8::Number>(solver_wrapper->solver->energy->separation->delta));
 }
 
-NAN_METHOD(getLambda) {
+NAN_METHOD(getLambda)
+{
 	info.GetReturnValue().Set(Nan::New<v8::Number>(solver_wrapper->solver->energy->lambda));
 }
 
-void Init(v8::Local<v8::Object> exports) {
-    NAN_EXPORT(exports, loadMeshWithSoup);
-    NAN_EXPORT(exports, startSolver);
-    NAN_EXPORT(exports, solverProgressed);
-    NAN_EXPORT(exports, getUpdatedMesh);
-    NAN_EXPORT(exports, increaseLambda);
-    NAN_EXPORT(exports, decreaseLambda);
-    NAN_EXPORT(exports, increaseDelta);
-    NAN_EXPORT(exports, decreaseDelta);
-
+void Init(v8::Local<v8::Object> exports)
+{
+	NAN_EXPORT(exports, loadMeshWithSoup);
+	NAN_EXPORT(exports, startSolver);
+	NAN_EXPORT(exports, stopSolver);
+	NAN_EXPORT(exports, solverProgressed);
+	NAN_EXPORT(exports, getUpdatedMesh);
 	NAN_EXPORT(exports, setDelta);
 	NAN_EXPORT(exports, setLambda);
 	NAN_EXPORT(exports, getDelta);

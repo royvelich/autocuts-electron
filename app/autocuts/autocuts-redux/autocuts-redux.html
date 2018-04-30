@@ -7,7 +7,9 @@
     editingTool: 'camera',
     showWireframe: true,
     meshViewportColor: 'rgb(0,0,0)',
-    solverViewportColor: 'rgb(0,0,0)'
+    solverViewportColor: 'rgb(0,0,0)',
+    lambda: 0,
+    delta: 1
   };
 
   const reducer = (state, action) => {
@@ -31,6 +33,12 @@
         break;
       case 'CHANGE_SHOW_WIREFRAME':
         stateDelta.showWireframe = action.showWireframe;
+        break;
+      case 'CHANGE_LAMBDA':
+        stateDelta.lambda = action.lambda;
+        break;
+      case 'CHANGE_DELTA':
+        stateDelta.delta = action.delta;
         break;
     }
     return Object.assign({}, state, stateDelta);
