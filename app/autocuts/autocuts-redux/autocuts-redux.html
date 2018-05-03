@@ -6,10 +6,11 @@
     splitOrientation: 'vertical',
     editingTool: 'camera',
     showWireframe: true,
-    meshViewportColor: 'rgb(0,0,0)',
+    modelViewportColor: 'rgb(0,0,0)',
     solverViewportColor: 'rgb(0,0,0)',
     lambda: 0,
-    delta: 1
+    delta: 1,
+    solver: false
   };
 
   const reducer = (state, action) => {
@@ -25,8 +26,8 @@
       case 'CHANGE_EDITING_TOOL':
         stateDelta.editingTool = action.editingTool;
         break;
-      case 'CHANGE_MESH_VIEWPORT_COLOR':
-        stateDelta.meshViewportColor = action.color;
+      case 'CHANGE_MODEL_VIEWPORT_COLOR':
+        stateDelta.modelViewportColor = action.color;
         break;
       case 'CHANGE_SOLVER_VIEWPORT_COLOR':
         stateDelta.solverViewportColor = action.color;
@@ -39,6 +40,9 @@
         break;
       case 'CHANGE_DELTA':
         stateDelta.delta = action.delta;
+        break;
+      case 'CHANGE_SOLVER':
+        stateDelta.solver = action.solver;
         break;
     }
     return Object.assign({}, state, stateDelta);

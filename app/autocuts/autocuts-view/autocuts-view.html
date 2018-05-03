@@ -5,6 +5,10 @@
 <link rel="import" href="../autocuts-side-bar/autocuts-side-bar.html">
 <link rel="import" href="../autocuts-redux/autocuts-redux.html">
 
+<link rel="import" href="../../components/mesh-provider/mesh-provider.js">
+<link rel="import" href="../autocuts-model-mesh-provider/autocuts-model-mesh-provider.html">
+<link rel="import" href="../autocuts-solver-mesh-provider/autocuts-solver-mesh-provider.html">
+
 <dom-module id="autocuts-view">
   <template>
     <style>
@@ -26,8 +30,8 @@
     <vaadin-split-layout class="outer-split">
       <autocuts-side-bar></autocuts-side-bar>
       <vaadin-split-layout orientation="[[splitOrientation]]" class="inner-split">
-        <mesh-view title="Mesh View" show-wireframe="[[showWireframe]]" background-color="[[meshViewportColor]]" data="{{meshData}}"></mesh-view>
-        <mesh-view title="Solver View" show-wireframe="[[showWireframe]]" background-color="[[solverViewportColor]]" data="{{solverData}}"></mesh-view>
+        <mesh-view title="Mesh View" show-wireframe="[[showWireframe]]" background-color="[[modelViewportColor]]" mesh-provider="{{modelMeshProvider}}"></mesh-view>
+        <mesh-view title="Solver View" show-wireframe="[[showWireframe]]" background-color="[[solverViewportColor]]" mesh-provider="{{solverMeshProvider}}"></mesh-view>
       </vaadin-split-layout>
     </vaadin-split-layout>
   </template>
@@ -39,9 +43,9 @@
 
       static get properties() {
         return {
-          meshViewportColor: {
+          modelViewportColor: {
             type: String,
-            statePath: 'meshViewportColor',
+            statePath: 'modelViewportColor',
           },
           solverViewportColor: {
             type: String,
@@ -65,7 +69,12 @@
             type: String,
             statePath: 'splitOrientation'
           },
-          meshFilename: {
+          solver: {
+            type: Boolean,
+            statePath: 'solver',
+            observer: '_solverChanged'
+          },
+          modelFilename: {
             type: String
           }
         };
@@ -88,34 +97,38 @@
       }
 
       ready() {
-        this.reloadMeshSubscriptionToken = require('pubsub-js').subscribe('reload-mesh', (name, payload) => {
-          this._reloadMesh(payload.meshFilename);
+        this.reloadModelSubscriptionToken = require('pubsub-js').subscribe('reload-model', (name, payload) => {
+          this._reloadModel(payload.modelFilename);
         });
 
         this.reloadModuleSubscriptionToken = require('pubsub-js').subscribe('reload-module', () => {
           this._reloadModule();
         });
 
-        this.addEventListener('mesh-files-loaded', this._meshFilesLoaded);
         this.addEventListener('split-orientation-changed', this._splitOrientationChanged);
         this.addEventListener('lambda-changed', this._lambdaChanged);
         this.addEventListener('delta-changed', this._deltaChanged);
 
-        this.autocutsEngine = require(this._getLatestModulePath());
+        this._loadModule();
 
         super.ready();
       }
 
-      _reloadMesh(meshFilename) {
-        this.meshWithSoup = this.autocutsEngine.loadMeshWithSoup(meshFilename);
-        this.meshData = this.meshWithSoup.meshData;
-        this.solverData = this.meshWithSoup.solverData;
-        this.meshFilename = meshFilename;
+      _reloadModel(modelFilename) {
+        this.autocutsEngine.loadModel(modelFilename);
+        this.modelFilename = modelFilename;
+      }
+
+      _loadModule() {
+        let AutocutsModule = require(this._getLatestModulePath());
+        this.autocutsEngine = new AutocutsModule.AutocutsEngine();
+        this.modelMeshProvider = new AutocutsModelMeshProvider(this.autocutsEngine);
+        this.solverMeshProvider = new AutocutsSolverMeshProvider(this.autocutsEngine);
       }
 
       _reloadModule() {
-        this.autocutsEngine = require(this._getLatestModulePath());
-        this._reloadMesh(this.meshFilename);
+        this._loadModule();
+        this._reloadModel(this.modelFilename);
       }
 
       _splitOrientationChanged(e) {
@@ -123,11 +136,19 @@
       }
 
       _lambdaChanged(lambda) {
-        this.autocutsEngine.setLambda(lambda);
+        this.autocutsEngine.lambda = lambda;
       }
 
       _deltaChanged(delta) {
-        this.autocutsEngine.setDelta(delta);
+        this.autocutsEngine.delta = delta;
+      }
+
+      _solverChanged(solver) {
+        if (solver) {
+          this.autocutsEngine.startSolver();
+        } else {
+          this.autocutsEngine.stopSolver();
+        }
       }
     }
     customElements.define(AutocutsView.is, AutocutsView);

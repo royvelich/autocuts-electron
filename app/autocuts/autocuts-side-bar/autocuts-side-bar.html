@@ -42,10 +42,10 @@
         cursor: pointer;
       }
     </style>
-    <side-bar-section title="Mesh Options">
-      <vaadin-button theme="contrast primary" on-click="_loadMesh">
+    <side-bar-section title="Model Options">
+      <vaadin-button theme="contrast primary" on-click="_loadModel">
         <iron-icon icon="vaadin:plus" slot="prefix"></iron-icon>
-        <span>Load Mesh...</span>
+        <span>Load Model...</span>
       </vaadin-button>
       <vaadin-checkbox on-checked-changed="_showWireframeChanged" checked>Show Wireframe</vaadin-checkbox>
     </side-bar-section>
@@ -72,7 +72,7 @@
       </vaadin-dropdown-menu>
     </side-bar-section>
     <side-bar-section title="Solver">
-      <paper-toggle-button class="solver" disabled>[[_getSolverText()]]</paper-toggle-button>
+      <paper-toggle-button class="solver" checked="{{solver}}" disabled>[[_getSolverText(solver)]]</paper-toggle-button>
     </side-bar-section>
     <side-bar-section title="Viewports">
       <vaadin-dropdown-menu label="Split Orientation" value="vertical" on-value-changed="_splitOrientationChanged">
@@ -84,8 +84,8 @@
         </template>
       </vaadin-dropdown-menu>
       <div class="viewport-color-picker-container">
-        <paper-swatch-picker on-color-changed='_meshViewportColorChanged'></paper-swatch-picker>
-        <div>Mesh Viewport Color</div>
+        <paper-swatch-picker on-color-changed='_modelViewportColorChanged'></paper-swatch-picker>
+        <div>Model Viewport Color</div>
       </div>
       <div class="viewport-color-picker-container">
         <paper-swatch-picker on-color-changed='_solverViewportColorChanged'></paper-swatch-picker>
@@ -111,30 +111,30 @@
             value: function () {
               return 0;
             },
-            observer: '_setLambda'
+            observer: '_lambdaChanged'
           },
           delta: {
             type: Number,
             value: function () {
               return 1;
             },
-            observer: '_setDelta'
+            observer: '_deltaChanged'
           },
-          solverRunning: {
+          solver: {
             type: Boolean,
             value: function () {
               return false;
             },
-            observer: '_solverRunningChanged'
+            observer: '_solverChanged'
           }
         };
       }
 
       static get actions() {
         return {
-          changeMeshViewportColor: (color) => {
+          changeModelViewportColor: (color) => {
             return {
-              type: 'CHANGE_MESH_VIEWPORT_COLOR',
+              type: 'CHANGE_MODEL_VIEWPORT_COLOR',
               color: color
             };
           },
@@ -161,12 +161,18 @@
               type: 'CHANGE_LAMBDA',
               lambda: lambda
             };
+          },
+          changeSolver: (solver) => {
+            return {
+              type: 'CHANGE_SOLVER',
+              solver: solver
+            }
           }
         };
       }
 
       ready() {
-        this.reloadMeshSubscriptionToken = require('pubsub-js').subscribe('reload-mesh', (name, payload) => {
+        this.reloadModelSubscriptionToken = require('pubsub-js').subscribe('reload-model', (name, payload) => {
           let solverToggleButton = this.root.querySelector(".solver");
           solverToggleButton.disabled = false;
         });
@@ -175,19 +181,19 @@
       }
 
       _getSolverText() {
-        if (this.solverRunning) {
+        if (this.solver) {
           return 'On';
         }
 
         return 'Off';
       }
 
-      _loadMesh() {
+      _loadModel() {
         const dialog = require('electron').remote.dialog;
         let files = dialog.showOpenDialog({
           properties: ['openFile'],
           filters: [{
-            name: 'Mesh Files',
+            name: '3D Model Files',
             extensions: ['obj', 'off']
           }, {
             name: 'All Files',
@@ -195,8 +201,8 @@
           }]
         });
 
-        require('pubsub-js').publish('reload-mesh', {
-          meshFilename: files[0]
+        require('pubsub-js').publish('reload-model', {
+          modelFilename: files[0]
         });
       }
 
@@ -225,8 +231,8 @@
         }));
       }
 
-      _meshViewportColorChanged(e) {
-        this.dispatch('changeMeshViewportColor', e.detail.value);
+      _modelViewportColorChanged(e) {
+        this.dispatch('changeModelViewportColor', e.detail.value);
       }
 
       _solverViewportColorChanged(e) {
@@ -238,35 +244,35 @@
       }
 
       _decreaseLambda() {
-        this.lambda = this._roundToPrecision(parseFloat(this.lambda, ) - 0.1, 2);
+        this.lambda = this._roundToPrecision(parseFloat(this.lambda, ) - 0.05, 2);
       }
 
       _increaseLambda() {
-        this.lambda = this._roundToPrecision(parseFloat(this.lambda) + 0.1, 2);
+        this.lambda = this._roundToPrecision(parseFloat(this.lambda) + 0.05, 2);
       }
 
       _decreaseDelta() {
-        this.delta = this._roundToPrecision(parseFloat(this.delta) - 0.1, 2);
+        this.delta = this._roundToPrecision(parseFloat(this.delta) - 0.05, 2);
       }
 
       _increaseDelta() {
-        this.delta = this._roundToPrecision(parseFloat(this.delta) + 0.1, 2);
+        this.delta = this._roundToPrecision(parseFloat(this.delta) + 0.05, 2);
       }
 
       _roundToPrecision(num, precision) {
         return parseFloat(Math.round(num * Math.pow(10, precision)) / Math.pow(10, precision));
       }
 
-      _setDelta(delta) {
+      _deltaChanged(delta) {
         this.dispatch('changeDelta', delta);
       }
 
-      _setLambda(lambda) {
+      _lambdaChanged(lambda) {
         this.dispatch('changeLambda', lambda);
       }
 
-      _solverRunningChanged(running) {
-
+      _solverChanged(solver) {
+        this.dispatch('changeSolver', solver);
       }
     }
     customElements.define(AutocutsSideBar.is, AutocutsSideBar);

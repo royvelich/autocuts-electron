@@ -1,6 +1,7 @@
 <link rel="import" href="../../bower_components/polymer/polymer-element.html">
 <link rel="import" href="../../bower_components/polymer/lib/utils/render-status.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
+<link rel="import" href="../mesh-provider/mesh-provider.html">
 <dom-module id="mesh-view">
   <template>
     <style>
@@ -44,15 +45,12 @@
 
       static get properties() {
         return {
-          data: {
+          meshProvider: {
             type: Object,
             value: function () {
-              return {
-                faces: [],
-                vectices: []
-              };
+              return new MeshProvider();
             },
-            observer: '_dataChanged'
+            observer: '_meshProviderChanged'
           },
           title: {
             type: String
@@ -108,17 +106,19 @@
         }
       }
 
-      _dataChanged(data) {
+      _rebuildScene() {
         let THREE = require('three');
         this._clearScene();
 
         let geometry = new THREE.BufferGeometry();
+        let meshProviderVertices = this.meshProvider.getVertices();
+        let meshProviderFaces = this.meshProvider.getFaces();
         let vertices = [];
 
-        data.faces.forEach(function (face) {
-          let v0 = data.vertices[face[0]];
-          let v1 = data.vertices[face[1]];
-          let v2 = data.vertices[face[2]];
+        meshProviderFaces.forEach(function (face) {
+          let v0 = meshProviderVertices[face[0]];
+          let v1 = meshProviderVertices[face[1]];
+          let v2 = meshProviderVertices[face[2]];
           vertices.push(v0.x, v0.y, v0.z);
           vertices.push(v1.x, v1.y, v1.z);
           vertices.push(v2.x, v2.y, v2.z);
@@ -143,6 +143,10 @@
         if (this.showWireframe) {
           this.scene.add(this.meshWireframe);
         }
+      }
+
+      _meshProviderChanged(meshProvider) {
+        this._rebuildScene();
       }
 
       _backgroundColorChanged(color) {
@@ -189,6 +193,7 @@
         this.controls.enableDamping = true;
         this.controls.dampingFactor = 0.25;
         this.controls.screenSpacePanning = false;
+        this.controls.enableKeys = false;
         this.controls.minDistance = 0;
         this.controls.maxDistance = 1000;
         this.controls.maxPolarAngle = 2 * Math.PI;
@@ -203,6 +208,7 @@
 
       _renderScene() {
         requestAnimationFrame(() => this._renderScene());
+        this._rebuildScene();
         this.renderer.render(this.scene, this.camera);
       }
 

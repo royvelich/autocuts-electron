@@ -4,6 +4,9 @@
       "target_name": "autocuts-engine",
       "sources": [
         "index.cpp",
+        "AutocutsEngine.cpp",
+        "AutocutsEngine.h",
+        "AutocutsEngineModule.cpp",
         "src/BBox.cpp",
         "src/Energy.cpp",
         "src/EnergySymDir.cpp",
@@ -18,7 +21,8 @@
         "<!(node -e \"require('nan')\")",
         "./libigl/include",
         "./libigl/external/eigen",
-        "./include"
+        "./include",
+        "./"
       ],
       "conditions": [
         [
