@@ -104,76 +104,59 @@ NAN_GETTER(AutocutsEngine::ModelVerticesGet)
 {
     // `Unwrap` refer C++ object from JS Object
     auto autocutsEngine = Nan::ObjectWrap::Unwrap<AutocutsEngine>(info.Holder());
-
-    auto verticesMatrix = autocutsEngine->GetModelVertices();
-    auto verticesArray = Nan::New<v8::Array>();
-    for (auto i = 0; i < verticesMatrix.rows(); ++i)
-    {
-        auto vertex = Nan::New<v8::Object>();
-        vertex->Set(Nan::New("x").ToLocalChecked(), Nan::New<v8::Number>(verticesMatrix(i, 0)));
-        vertex->Set(Nan::New("y").ToLocalChecked(), Nan::New<v8::Number>(verticesMatrix(i, 1)));
-        vertex->Set(Nan::New("z").ToLocalChecked(), Nan::New<v8::Number>(verticesMatrix(i, 2)));
-        verticesArray->Set(i, vertex);
-    }
-
-    info.GetReturnValue().Set(verticesArray);
+    v8::Local<v8::Array> modelVerticesArray = Nan::New(autocutsEngine->GetModelVerticesArray());
+    info.GetReturnValue().Set(modelVerticesArray);
 }
 
 NAN_GETTER(AutocutsEngine::ModelFacesGet)
 {
     // `Unwrap` refer C++ object from JS Object
     auto autocutsEngine = Nan::ObjectWrap::Unwrap<AutocutsEngine>(info.Holder());
-
-    auto facesMatrix = autocutsEngine->GetModelFaces();
-    auto facesArray = Nan::New<v8::Array>();
-    for (auto i = 0; i < facesMatrix.rows(); ++i)
-    {
-        auto face = Nan::New<v8::Array>();
-        face->Set(0, Nan::New<v8::Number>(facesMatrix(i, 0)));
-        face->Set(1, Nan::New<v8::Number>(facesMatrix(i, 1)));
-        face->Set(2, Nan::New<v8::Number>(facesMatrix(i, 2)));
-        facesArray->Set(i, face);
-    }
-
-    info.GetReturnValue().Set(facesArray);
+    v8::Local<v8::Array> modelFacesArray = Nan::New(autocutsEngine->GetModelFacesArray());
+    info.GetReturnValue().Set(modelFacesArray);
 }
 
 NAN_GETTER(AutocutsEngine::SolverVerticesGet)
 {
     // `Unwrap` refer C++ object from JS Object
     auto autocutsEngine = Nan::ObjectWrap::Unwrap<AutocutsEngine>(info.Holder());
-
-    auto verticesMatrix = autocutsEngine->GetSolverVertices();
-    auto verticesArray = Nan::New<v8::Array>();
-    for (auto i = 0; i < verticesMatrix.rows(); ++i)
-    {
-        auto vertex = Nan::New<v8::Object>();
-        vertex->Set(Nan::New("x").ToLocalChecked(), Nan::New<v8::Number>(verticesMatrix(i, 0)));
-        vertex->Set(Nan::New("y").ToLocalChecked(), Nan::New<v8::Number>(verticesMatrix(i, 1)));
-        vertex->Set(Nan::New("z").ToLocalChecked(), Nan::New<v8::Number>(0));
-        verticesArray->Set(i, vertex);
-    }
-
-    info.GetReturnValue().Set(verticesArray);
+    v8::Local<v8::Array> solverVerticesArray = Nan::New(autocutsEngine->GetSolverVerticesArray());
+    info.GetReturnValue().Set(solverVerticesArray);
 }
 
 NAN_GETTER(AutocutsEngine::SolverFacesGet)
 {
     // `Unwrap` refer C++ object from JS Object
     auto autocutsEngine = Nan::ObjectWrap::Unwrap<AutocutsEngine>(info.Holder());
-
-    auto facesMatrix = autocutsEngine->GetSolverFaces();
-    auto facesArray = Nan::New<v8::Array>();
-    for (auto i = 0; i < facesMatrix.rows(); ++i)
-    {
-        auto face = Nan::New<v8::Array>();
-        face->Set(0, Nan::New<v8::Number>(facesMatrix(i, 0)));
-        face->Set(1, Nan::New<v8::Number>(facesMatrix(i, 1)));
-        face->Set(2, Nan::New<v8::Number>(facesMatrix(i, 2)));
-        facesArray->Set(i, face);
-    }
-    info.GetReturnValue().Set(facesArray);
+    v8::Local<v8::Array> solverFacesArray = Nan::New(autocutsEngine->GetSolverFacesArray());
+    info.GetReturnValue().Set(solverFacesArray);
 }
+
+
+
+
+
+NAN_GETTER(AutocutsEngine::ModelBufferedVerticesGet)
+{
+    // `Unwrap` refer C++ object from JS Object
+    auto autocutsEngine = Nan::ObjectWrap::Unwrap<AutocutsEngine>(info.Holder());
+    v8::Local<v8::Array> bufferedModelVertices = Nan::New(autocutsEngine->GetBufferedModelVertices());
+    info.GetReturnValue().Set(bufferedModelVertices);
+}
+
+NAN_GETTER(AutocutsEngine::SolverBufferedVerticesGet)
+{
+    // `Unwrap` refer C++ object from JS Object
+    auto autocutsEngine = Nan::ObjectWrap::Unwrap<AutocutsEngine>(info.Holder());
+    v8::Local<v8::Array> bufferedSolverVertices = Nan::New(autocutsEngine->GetBufferedSolverVertices());
+    info.GetReturnValue().Set(bufferedSolverVertices);
+}
+
+
+
+
+
+
 
 NAN_MODULE_INIT(AutocutsEngine::Init)
 {
@@ -213,6 +196,19 @@ NAN_MODULE_INIT(AutocutsEngine::Init)
 
     auto solverFacesProperty = Nan::New("solverFaces").ToLocalChecked();
     Nan::SetAccessor(ctorInst, solverFacesProperty, SolverFacesGet);
+
+
+
+
+
+    auto modelBufferedVerticesProperty = Nan::New("modelBufferedVertices").ToLocalChecked();
+    Nan::SetAccessor(ctorInst, modelBufferedVerticesProperty, ModelBufferedVerticesGet);
+
+    auto solverBufferedVerticesProperty = Nan::New("solverBufferedVertices").ToLocalChecked();
+    Nan::SetAccessor(ctorInst, solverBufferedVerticesProperty, SolverBufferedVerticesGet);
+
+
+
 
     Nan::Set(target, cname, Nan::GetFunction(ctor).ToLocalChecked());
 }

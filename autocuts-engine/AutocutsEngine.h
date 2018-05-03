@@ -27,6 +27,7 @@ class AutocutsEngine : public Nan::ObjectWrap
     static NAN_METHOD(SolverProgressed);
 
     AutocutsEngine();
+    virtual ~AutocutsEngine();
     void LoadModel(std::string modelFilename);
     void StartSolver();
     void StopSolver();
@@ -37,10 +38,13 @@ class AutocutsEngine : public Nan::ObjectWrap
     void SetLambda(double lambda);
     double GetLambda();
 
-    const Eigen::MatrixXd& GetModelVertices();
-    const Eigen::MatrixXi& GetModelFaces();
-    const Eigen::MatrixX2d& GetSolverVertices();
-    const Eigen::MatrixXi& GetSolverFaces();
+    const Nan::Persistent<v8::Array>& GetModelVerticesArray();
+    const Nan::Persistent<v8::Array>& GetModelFacesArray();
+    const Nan::Persistent<v8::Array>& GetSolverVerticesArray();
+    const Nan::Persistent<v8::Array>& GetSolverFacesArray();
+
+    const Nan::Persistent<v8::Array>& GetBufferedModelVertices();
+    const Nan::Persistent<v8::Array>& GetBufferedSolverVertices();
 
   private:
     static NAN_METHOD(New);
@@ -53,19 +57,24 @@ class AutocutsEngine : public Nan::ObjectWrap
     static NAN_GETTER(ModelFacesGet);
     static NAN_GETTER(SolverVerticesGet);
     static NAN_GETTER(SolverFacesGet);
+    static NAN_GETTER(ModelBufferedVerticesGet);
+    static NAN_GETTER(SolverBufferedVerticesGet);
 
     FileType GetFilenameExtension(std::string fileName);
     std::string ToLower(std::string data);
 
-    Eigen::MatrixXd V;
-    Eigen::MatrixXi F;
-    Eigen::MatrixX2d Vs;
-    Eigen::MatrixXi Fs;
+    Eigen::MatrixXd modelVerticesMatrix;
+    Eigen::MatrixXi modelFacesMatrix;
+    Eigen::MatrixX2d solverVerticesMatrix;
+    Eigen::MatrixXi solverFacesMatrix;
 
-    v8::Local<v8::Array> V_Array;
-    v8::Local<v8::Array> F_Array;
-    v8::Local<v8::Array> Vs_Array;
-    v8::Local<v8::Array> Fs_Array;
+    Nan::Persistent<v8::Array> modelVerticesArray;
+    Nan::Persistent<v8::Array> modelFacesArray;
+    Nan::Persistent<v8::Array> solverVerticesArray;
+    Nan::Persistent<v8::Array> solverFacesArray;
+
+    Nan::Persistent<v8::Array> bufferedModelVertices;
+    Nan::Persistent<v8::Array> bufferedSolverVertices;
 
     std::shared_ptr<SolverWrapper> solverWrapper;
     std::thread solverThread;

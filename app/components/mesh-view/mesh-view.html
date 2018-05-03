@@ -83,20 +83,10 @@
       }
 
       ready() {
+        this.THREE = require('three');
         this.meshViewResizeSubscriptionToken = require('pubsub-js').subscribe('mesh-view.resize', () => this._resizeScene());
         this._initialize();
         super.ready();
-      }
-
-      _createMultiMaterialObject(geometry, materials) {
-        let THREE = require('three');
-        var group = new THREE.Group();
-
-        for (var i = 0, l = materials.length; i < l; i++) {
-          group.add(new THREE.Mesh(geometry, materials[i]));
-        }
-
-        return group;
       }
 
       _showWireframeChanged(showWireframe) {
@@ -107,36 +97,34 @@
       }
 
       _rebuildScene() {
-        let THREE = require('three');
-        this._clearScene();
+        // let meshProviderVertices = this.meshProvider.getVertices();
+        // let meshProviderFaces = this.meshProvider.getFaces();
+        // let vertices = [];
 
-        let geometry = new THREE.BufferGeometry();
-        let meshProviderVertices = this.meshProvider.getVertices();
-        let meshProviderFaces = this.meshProvider.getFaces();
-        let vertices = [];
+        // meshProviderFaces.forEach(function (face) {
+        //   let v0 = meshProviderVertices[face[0]];
+        //   let v1 = meshProviderVertices[face[1]];
+        //   let v2 = meshProviderVertices[face[2]];
+        //   vertices.push(v0.x, v0.y, v0.z);
+        //   vertices.push(v1.x, v1.y, v1.z);
+        //   vertices.push(v2.x, v2.y, v2.z);
+        // });
 
-        meshProviderFaces.forEach(function (face) {
-          let v0 = meshProviderVertices[face[0]];
-          let v1 = meshProviderVertices[face[1]];
-          let v2 = meshProviderVertices[face[2]];
-          vertices.push(v0.x, v0.y, v0.z);
-          vertices.push(v1.x, v1.y, v1.z);
-          vertices.push(v2.x, v2.y, v2.z);
-        });
-
-        geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(vertices), 3));
-
-        let material = new THREE.MeshBasicMaterial({
+        this.material = new this.THREE.MeshBasicMaterial({
           color: 0xff0000
         });
 
-        let wireframeMaterial = new THREE.MeshBasicMaterial({
+        this.wireframeMaterial = new this.THREE.MeshBasicMaterial({
           color: 0x000000,
           wireframe: true,
         });
 
-        this.mesh = new THREE.Mesh(geometry, material);
-        this.meshWireframe = new THREE.Mesh(geometry, wireframeMaterial)
+        this.geometry = new this.THREE.BufferGeometry();
+        this.geometry.addAttribute('position', new this.THREE.BufferAttribute(new Float32Array(this.meshProvider.getBufferedVertices()),
+          3));
+
+        this.mesh = new this.THREE.Mesh(this.geometry, this.material);
+        this.meshWireframe = new this.THREE.Mesh(this.geometry, this.wireframeMaterial)
 
         this.scene.add(this.mesh);
 
@@ -146,7 +134,11 @@
       }
 
       _meshProviderChanged(meshProvider) {
-        this._rebuildScene();
+        if (this.scheduledAnimationFrameId) {
+          cancelAnimationFrame(this.scheduledAnimationFrameId);
+        }
+
+        this._renderScene();
       }
 
       _backgroundColorChanged(color) {
@@ -154,9 +146,22 @@
         this.renderer.setClearColor(new THREE.Color(color), 1.0);
       }
 
-      _clearScene() {
-        while (this.scene.children.length > 0) {
-          this.scene.remove(this.scene.children[0]);
+      _clearSceneSubtree(object) {
+        while (object.children.length > 0) {
+          this._clearSceneSubtree(object.children[0])
+          object.remove(object.children[0]);
+        }
+
+        if (object.geometry) {
+          object.geometry.dispose()
+        }
+
+        if (object.material) {
+          object.material.dispose()
+        }
+
+        if (object.texture) {
+          object.texture.dispose()
         }
       }
 
@@ -207,9 +212,10 @@
       }
 
       _renderScene() {
-        requestAnimationFrame(() => this._renderScene());
+        this.scheduledAnimationFrameId = requestAnimationFrame(() => this._renderScene());
         this._rebuildScene();
         this.renderer.render(this.scene, this.camera);
+        this._clearSceneSubtree(this.scene);
       }
 
       _connectScene() {

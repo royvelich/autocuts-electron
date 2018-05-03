@@ -11,4 +11,8 @@ class AutocutsSolverMeshProvider extends MeshProvider {
   getFaces() {
     return this.autocutsEngine.solverFaces;
   }
+
+  getBufferedVertices() {
+    return this.autocutsEngine.solverBufferedVertices;
+  }
 }

@@ -24,7 +24,20 @@ FileType AutocutsEngine::GetFilenameExtension(std::string fileName)
 AutocutsEngine::AutocutsEngine() :
     solverWrapper(std::make_shared<SolverWrapper>())
 {
+    modelVerticesArray.Reset(Nan::New<v8::Array>());
+    modelFacesArray.Reset(Nan::New<v8::Array>());
+    solverVerticesArray.Reset(Nan::New<v8::Array>());
+    solverFacesArray.Reset(Nan::New<v8::Array>());
+    bufferedSolverVertices.Reset(Nan::New<v8::Array>());
+    bufferedModelVertices.Reset(Nan::New<v8::Array>());
+}
 
+AutocutsEngine::~AutocutsEngine()
+{
+    modelVerticesArray.Reset();
+    modelFacesArray.Reset();
+    solverVerticesArray.Reset();
+    solverFacesArray.Reset();
 }
 
 void AutocutsEngine::LoadModel(std::string modelFilePath)
@@ -35,11 +48,11 @@ void AutocutsEngine::LoadModel(std::string modelFilePath)
     switch (modelFileType)
     {
     case FileType::Obj:
-        igl::readOBJ(modelFilePath, V, F);
+        igl::readOBJ(modelFilePath, modelVerticesMatrix, modelFacesMatrix);
         break;
 
     case FileType::Off:
-        igl::readOFF(modelFilePath, V, F);
+        igl::readOFF(modelFilePath, modelVerticesMatrix, modelFacesMatrix);
         break;
 
     default:
@@ -47,44 +60,144 @@ void AutocutsEngine::LoadModel(std::string modelFilePath)
     }
 
     // If faces were received as quads, transform them into triangles
-    if (F.cols() == 4)
+    if (modelFacesMatrix.cols() == 4)
     {
-        auto newF = MatX3i(F.rows() * 2, 3);
+        auto newModelFacesMatrix = MatX3i(modelFacesMatrix.rows() * 2, 3);
         Vec4i face;
-        for (int i = 0; i < F.rows(); ++i)
+        for (int i = 0; i < modelFacesMatrix.rows(); ++i)
         {
-            face = F.row(i);
-            newF.row(2 * i) << face[0], face[1], face[3];
-            newF.row(2 * i + 1) << face[1], face[2], face[3];
+            face = modelFacesMatrix.row(i);
+            newModelFacesMatrix.row(2 * i) << face[0], face[1], face[3];
+            newModelFacesMatrix.row(2 * i + 1) << face[1], face[2], face[3];
         }
 
-        F = newF;
+        modelFacesMatrix = newModelFacesMatrix;
     }
 
     // Translate all points such that their mean will be at the origin
-    V.col(0).array() -= V.col(0).mean();
-    V.col(1).array() -= V.col(1).mean();
-    V.col(2).array() -= V.col(2).mean();
+    modelVerticesMatrix.col(0).array() -= modelVerticesMatrix.col(0).mean();
+    modelVerticesMatrix.col(1).array() -= modelVerticesMatrix.col(1).mean();
+    modelVerticesMatrix.col(2).array() -= modelVerticesMatrix.col(2).mean();
 
     // Get the one-dimensional distance between the two most distant points on each axis
-    double xDist = V.col(0).maxCoeff() - V.col(0).minCoeff();
-    double yDist = V.col(1).maxCoeff() - V.col(1).minCoeff();
-    double zDist = V.col(2).maxCoeff() - V.col(2).minCoeff();
+    double xDist = modelVerticesMatrix.col(0).maxCoeff() - modelVerticesMatrix.col(0).minCoeff();
+    double yDist = modelVerticesMatrix.col(1).maxCoeff() - modelVerticesMatrix.col(1).minCoeff();
+    double zDist = modelVerticesMatrix.col(2).maxCoeff() - modelVerticesMatrix.col(2).minCoeff();
 
     // Get the longest distance between all axes
     double maxDist = max(max(xDist, yDist), zDist);
 
     // Scale all points by '1/maxDist' such that their coordinates will be normalized to [-1, 1] domain
-    V.col(0).array() /= maxDist;
-    V.col(1).array() /= maxDist;
-    V.col(2).array() /= maxDist;
+    modelVerticesMatrix.col(0).array() /= maxDist;
+    modelVerticesMatrix.col(1).array() /= maxDist;
+    modelVerticesMatrix.col(2).array() /= maxDist;
 
     // Initialize parameterization solver
-    solverWrapper->init(V, F, V, F, Utils::Init::RANDOM);
+    solverWrapper->init(modelVerticesMatrix, modelFacesMatrix, modelVerticesMatrix, modelFacesMatrix, Utils::Init::RANDOM);
 
     // Get solver faces and vertices
-    Fs = solverWrapper->solver->Fs;
-    solverWrapper->solver->get_mesh(Vs);
+    solverFacesMatrix = solverWrapper->solver->Fs;
+    solverWrapper->solver->get_mesh(solverVerticesMatrix);
+
+
+    auto localModelVerticesArray = Nan::New<v8::Array>();
+    for (auto i = 0; i < modelVerticesMatrix.rows(); ++i)
+    {
+        auto vertex = Nan::New<v8::Object>();
+        vertex->Set(Nan::New("x").ToLocalChecked(), Nan::New<v8::Number>(modelVerticesMatrix(i, 0)));
+        vertex->Set(Nan::New("y").ToLocalChecked(), Nan::New<v8::Number>(modelVerticesMatrix(i, 1)));
+        vertex->Set(Nan::New("z").ToLocalChecked(), Nan::New<v8::Number>(modelVerticesMatrix(i, 2)));
+        localModelVerticesArray->Set(i, vertex);
+    }
+
+    auto localModelFacesArray = Nan::New<v8::Array>();
+    for (auto i = 0; i < modelFacesMatrix.rows(); ++i)
+    {
+        auto face = Nan::New<v8::Array>();
+        face->Set(0, Nan::New<v8::Number>(modelFacesMatrix(i, 0)));
+        face->Set(1, Nan::New<v8::Number>(modelFacesMatrix(i, 1)));
+        face->Set(2, Nan::New<v8::Number>(modelFacesMatrix(i, 2)));
+        localModelFacesArray->Set(i, face);
+    }
+
+    auto localSolverVerticesArray = Nan::New<v8::Array>();
+    for (auto i = 0; i < solverVerticesMatrix.rows(); ++i)
+    {
+        auto vertex = Nan::New<v8::Object>();
+        vertex->Set(Nan::New("x").ToLocalChecked(), Nan::New<v8::Number>(solverVerticesMatrix(i, 0)));
+        vertex->Set(Nan::New("y").ToLocalChecked(), Nan::New<v8::Number>(solverVerticesMatrix(i, 1)));
+        vertex->Set(Nan::New("z").ToLocalChecked(), Nan::New<v8::Number>(0));
+        localSolverVerticesArray->Set(i, vertex);
+    }
+
+    auto localSolverFacesArray = Nan::New<v8::Array>();
+    for (auto i = 0; i < solverFacesMatrix.rows(); ++i)
+    {
+        auto face = Nan::New<v8::Array>();
+        face->Set(0, Nan::New<v8::Number>(solverFacesMatrix(i, 0)));
+        face->Set(1, Nan::New<v8::Number>(solverFacesMatrix(i, 1)));
+        face->Set(2, Nan::New<v8::Number>(solverFacesMatrix(i, 2)));
+        localSolverFacesArray->Set(i, face);
+    }
+
+
+
+
+
+
+
+
+
+
+    auto localBufferedModelVertices = Nan::New<v8::Array>();
+    for (auto i = 0; i < modelFacesMatrix.rows(); ++i)
+    {
+        for (auto j = 0; j < 3; ++j) 
+        {
+            int vertexId = modelFacesMatrix(i, j);
+            auto x = modelVerticesMatrix(vertexId, 0);
+            auto y = modelVerticesMatrix(vertexId, 1);
+            auto z = modelVerticesMatrix(vertexId, 2);
+
+            localBufferedModelVertices->Set(3 * (j + 3 * i), Nan::New<v8::Number>(x));
+            localBufferedModelVertices->Set(3 * (j + 3 * i) + 1, Nan::New<v8::Number>(y));
+            localBufferedModelVertices->Set(3 * (j + 3 * i) + 2, Nan::New<v8::Number>(z));
+        }
+    }
+
+    auto localBufferedSolverVertices = Nan::New<v8::Array>();
+    for (auto i = 0; i < solverFacesMatrix.rows(); ++i)
+    {
+        for (auto j = 0; j < 3; ++j)
+        {
+            int vertexId = solverFacesMatrix(i, j);
+            auto x = solverVerticesMatrix(vertexId, 0);
+            auto y = solverVerticesMatrix(vertexId, 1);
+            auto z = 0;
+
+            localBufferedSolverVertices->Set(3 * (j + 3 * i), Nan::New<v8::Number>(x));
+            localBufferedSolverVertices->Set(3 * (j + 3 * i) + 1, Nan::New<v8::Number>(y));
+            localBufferedSolverVertices->Set(3 * (j + 3 * i) + 2, Nan::New<v8::Number>(z));
+        }
+    }
+
+
+
+
+
+
+
+
+
+
+
+    modelVerticesArray.Reset(localModelVerticesArray);
+    modelFacesArray.Reset(localModelFacesArray);
+    solverVerticesArray.Reset(localSolverVerticesArray);
+    solverFacesArray.Reset(localSolverFacesArray);
+
+    bufferedModelVertices.Reset(localBufferedModelVertices);
+    bufferedSolverVertices.Reset(localBufferedSolverVertices);
 }
 
 void AutocutsEngine::StartSolver()
@@ -125,27 +238,71 @@ double AutocutsEngine::GetLambda()
     return solverWrapper->solver->energy->lambda;
 }
 
-const Eigen::MatrixXd& AutocutsEngine::GetModelVertices()
+const Nan::Persistent<v8::Array>& AutocutsEngine::GetModelVerticesArray()
 {
-    return V;
+    return modelVerticesArray;
 }
 
-const Eigen::MatrixXi& AutocutsEngine::GetModelFaces()
+const Nan::Persistent<v8::Array>& AutocutsEngine::GetModelFacesArray()
 {
-    return F;
+    return modelFacesArray;
 }
 
-const Eigen::MatrixX2d& AutocutsEngine::GetSolverVertices()
+const Nan::Persistent<v8::Array>& AutocutsEngine::GetSolverVerticesArray()
 {
     if (solverWrapper->progressed())
     {
-        solverWrapper->solver->get_mesh(Vs);
+        solverWrapper->solver->get_mesh(solverVerticesMatrix);
+        auto localSolverVerticesArray = Nan::New<v8::Array>();
+        for (auto i = 0; i < solverVerticesMatrix.rows(); ++i)
+        {
+            auto vertex = Nan::New<v8::Object>();
+            vertex->Set(Nan::New("x").ToLocalChecked(), Nan::New<v8::Number>(solverVerticesMatrix(i, 0)));
+            vertex->Set(Nan::New("y").ToLocalChecked(), Nan::New<v8::Number>(solverVerticesMatrix(i, 1)));
+            vertex->Set(Nan::New("z").ToLocalChecked(), Nan::New<v8::Number>(0));
+            localSolverVerticesArray->Set(i, vertex);
+        }
+
+        solverVerticesArray.Reset(localSolverVerticesArray);
     }
 
-    return Vs;
+    return solverVerticesArray;
 }
 
-const Eigen::MatrixXi& AutocutsEngine::GetSolverFaces()
+const Nan::Persistent<v8::Array>& AutocutsEngine::GetSolverFacesArray()
 {
-    return Fs;
+    return solverFacesArray;
+}
+
+const Nan::Persistent<v8::Array>& AutocutsEngine::GetBufferedModelVertices()
+{
+    return bufferedModelVertices;
+}
+
+const Nan::Persistent<v8::Array>& AutocutsEngine::GetBufferedSolverVertices()
+{
+    if (solverWrapper->progressed())
+    {
+        solverWrapper->solver->get_mesh(solverVerticesMatrix);
+
+        auto localBufferedSolverVertices = Nan::New<v8::Array>();
+        for (auto i = 0; i < solverFacesMatrix.rows(); ++i)
+        {
+            for (auto j = 0; j < 3; ++j)
+            {
+                int vertexId = solverFacesMatrix(i, j);
+                auto x = solverVerticesMatrix(vertexId, 0);
+                auto y = solverVerticesMatrix(vertexId, 1);
+                auto z = 0;
+
+                localBufferedSolverVertices->Set(3* (j + 3*i), Nan::New<v8::Number>(x));
+                localBufferedSolverVertices->Set(3* (j + 3 * i) +1, Nan::New<v8::Number>(y));
+                localBufferedSolverVertices->Set(3* (j + 3 * i) +2, Nan::New<v8::Number>(z));
+            }
+        }
+
+        bufferedSolverVertices.Reset(localBufferedSolverVertices);
+    }
+
+    return bufferedSolverVertices;
 }
