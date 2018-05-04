@@ -99,7 +99,6 @@ void AutocutsEngine::LoadModel(std::string modelFilePath)
     solverFacesMatrix = solverWrapper->solver->Fs;
     solverWrapper->solver->get_mesh(solverVerticesMatrix);
 
-
     auto localModelVerticesArray = Nan::New<v8::Array>();
     for (auto i = 0; i < modelVerticesMatrix.rows(); ++i)
     {
@@ -140,15 +139,6 @@ void AutocutsEngine::LoadModel(std::string modelFilePath)
         localSolverFacesArray->Set(i, face);
     }
 
-
-
-
-
-
-
-
-
-
     auto localBufferedModelVertices = Nan::New<v8::Array>();
     for (auto i = 0; i < modelFacesMatrix.rows(); ++i)
     {
@@ -180,16 +170,6 @@ void AutocutsEngine::LoadModel(std::string modelFilePath)
             localBufferedSolverVertices->Set(3 * (j + 3 * i) + 2, Nan::New<v8::Number>(z));
         }
     }
-
-
-
-
-
-
-
-
-
-
 
     modelVerticesArray.Reset(localModelVerticesArray);
     modelFacesArray.Reset(localModelFacesArray);

@@ -152,12 +152,6 @@ NAN_GETTER(AutocutsEngine::SolverBufferedVerticesGet)
     info.GetReturnValue().Set(bufferedSolverVertices);
 }
 
-
-
-
-
-
-
 NAN_MODULE_INIT(AutocutsEngine::Init)
 {
     auto cname = Nan::New("AutocutsEngine").ToLocalChecked();
@@ -197,18 +191,11 @@ NAN_MODULE_INIT(AutocutsEngine::Init)
     auto solverFacesProperty = Nan::New("solverFaces").ToLocalChecked();
     Nan::SetAccessor(ctorInst, solverFacesProperty, SolverFacesGet);
 
-
-
-
-
     auto modelBufferedVerticesProperty = Nan::New("modelBufferedVertices").ToLocalChecked();
     Nan::SetAccessor(ctorInst, modelBufferedVerticesProperty, ModelBufferedVerticesGet);
 
     auto solverBufferedVerticesProperty = Nan::New("solverBufferedVertices").ToLocalChecked();
     Nan::SetAccessor(ctorInst, solverBufferedVerticesProperty, SolverBufferedVerticesGet);
-
-
-
 
     Nan::Set(target, cname, Nan::GetFunction(ctor).ToLocalChecked());
 }
