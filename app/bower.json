@@ -29,6 +29,7 @@
     "paper-swatch-picker": "^2.2.0",
     "neon-animation": "PolymerElements/neon-animation#^2.2.1",
     "web-animations-js": "^2.3.1",
-    "polymer-redux": "tur-nr/polymer-redux#^1.0.5"
+    "polymer-redux": "tur-nr/polymer-redux#^1.0.5",
+    "stats.js": "*"
   }
 }

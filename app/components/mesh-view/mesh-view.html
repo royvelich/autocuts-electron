@@ -2,6 +2,7 @@
 <link rel="import" href="../../bower_components/polymer/lib/utils/render-status.html">
 <link rel="import" href="../../bower_components/iron-resizable-behavior/iron-resizable-behavior.html">
 <link rel="import" href="../mesh-provider/mesh-provider.html">
+<link rel="import" href="./statsjs-import.html">
 <dom-module id="mesh-view">
   <template>
     <style>
@@ -32,9 +33,7 @@
       }
     </style>
     <div class="container">
-      <div class="canvas-title">
-        [[title]]
-      </div>
+      <div class="canvas-title">[[title]]</div>
     </div>
   </template>
   <script>
@@ -90,9 +89,11 @@
       }
 
       _showWireframeChanged(showWireframe) {
-        this.scene.remove(this.meshWireframe);
-        if (showWireframe) {
-          this.scene.add(this.meshWireframe);
+        if (this.meshWireframe) {
+          this.scene.remove(this.meshWireframe);
+          if (showWireframe) {
+            this.scene.add(this.meshWireframe);
+          }
         }
       }
 
@@ -134,11 +135,11 @@
       }
 
       _meshProviderChanged(meshProvider) {
-        if (this.scheduledAnimationFrameId) {
-          cancelAnimationFrame(this.scheduledAnimationFrameId);
-        }
+        // if (this.scheduledAnimationFrameId) {
+        //   cancelAnimationFrame(this.scheduledAnimationFrameId);
+        // }
 
-        this._renderScene();
+        //this._renderScene();
       }
 
       _backgroundColorChanged(color) {
@@ -212,14 +213,25 @@
       }
 
       _renderScene() {
-        this.scheduledAnimationFrameId = requestAnimationFrame(() => this._renderScene());
+        this.stats.begin();
+
         this._rebuildScene();
         this.renderer.render(this.scene, this.camera);
         this._clearSceneSubtree(this.scene);
+
+        this.stats.end();
+
+        this.scheduledAnimationFrameId = requestAnimationFrame(() => this._renderScene());
       }
 
       _connectScene() {
         this.root.querySelector('.container').appendChild(this.renderer.domElement);
+        this.stats = new Stats();
+        this.stats.showPanel(1);
+        this.stats.dom.style.position = 'absolute';
+        this.stats.dom.style.top = '';
+        this.stats.dom.style.bottom = '0px';
+        this.root.querySelector('.container').appendChild(this.stats.dom);
       }
     }
     customElements.define(MeshView.is, MeshView);
