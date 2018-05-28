@@ -266,18 +266,20 @@ const Nan::Persistent<v8::Array>& AutocutsEngine::GetBufferedSolverVertices()
         solverWrapper->solver->get_mesh(solverVerticesMatrix);
 
         auto localBufferedSolverVertices = Nan::New<v8::Array>();
-        for (auto i = 0; i < solverFacesMatrix.rows(); ++i)
+        for (auto faceIndex = 0; faceIndex < solverFacesMatrix.rows(); ++faceIndex)
         {
-            for (auto j = 0; j < 3; ++j)
+            auto faceFirstVertexBufferIndex = 9 * faceIndex;
+            for (auto vertexIndex = 0; vertexIndex < 3; ++vertexIndex)
             {
-                int vertexId = solverFacesMatrix(i, j);
+                int vertexId = solverFacesMatrix(faceIndex, vertexIndex);
                 auto x = solverVerticesMatrix(vertexId, 0);
                 auto y = solverVerticesMatrix(vertexId, 1);
                 auto z = 0;
 
-                localBufferedSolverVertices->Set(3* (j + 3*i), Nan::New<v8::Number>(x));
-                localBufferedSolverVertices->Set(3* (j + 3 * i) +1, Nan::New<v8::Number>(y));
-                localBufferedSolverVertices->Set(3* (j + 3 * i) +2, Nan::New<v8::Number>(z));
+                auto vertexFirstComponentBufferIndex = faceFirstVertexBufferIndex + 3 * vertexIndex;
+                localBufferedSolverVertices->Set(vertexFirstComponentBufferIndex, Nan::New<v8::Number>(x));
+                localBufferedSolverVertices->Set(vertexFirstComponentBufferIndex + 1, Nan::New<v8::Number>(y));
+                localBufferedSolverVertices->Set(vertexFirstComponentBufferIndex + 2, Nan::New<v8::Number>(z));
             }
         }
 
@@ -285,4 +287,38 @@ const Nan::Persistent<v8::Array>& AutocutsEngine::GetBufferedSolverVertices()
     }
 
     return bufferedSolverVertices;
+}
+
+void AutocutsEngine::AddTriangleToFixedPositionSet(int32_t faceId)
+{
+    Mat32 pos;
+    igl::slice(solverWrapper->solver->Vs, solverWrapper->solver->Fs.row(faceId).eval(), 1, pos);
+    solverWrapper->add_or_remove_triangle_from_fixed_position_set(faceId, pos);
+}
+
+void AutocutsEngine::SetMovingTriangleFaceId(int32_t faceId)
+{
+    movingTriangleFaceId = faceId;
+    if (!solverWrapper->if_its_a_fixed_triangle_remove_and_store(movingTriangleFaceId, movingTriangleInitialPosition))
+        igl::slice(solverWrapper->solver->Vs, solverWrapper->solver->Fs.row(movingTriangleFaceId).eval(), 1, movingTriangleInitialPosition);
+
+    UpdateMovingTrianglePosition(RVec2(0, 0));
+
+    solverWrapper->set_active_triangle(movingTriangleFaceId);
+}
+
+void AutocutsEngine::ResetMovingTriangleFaceId()
+{
+    movingTriangleFaceId = -1;
+    solverWrapper->set_active_triangle(movingTriangleFaceId);
+}
+
+void AutocutsEngine::UpdateMovingTrianglePosition(const RVec2& offset)
+{
+    Mat32 movingTrianglePosition = movingTriangleInitialPosition;
+    movingTrianglePosition.row(0) += offset;
+    movingTrianglePosition.row(1) += offset;
+    movingTrianglePosition.row(2) += offset;
+    currentTriangleInitialPosition = movingTrianglePosition;
+    solverWrapper->set_target_triangle_position(movingTrianglePosition, movingTriangleFaceId);
 }

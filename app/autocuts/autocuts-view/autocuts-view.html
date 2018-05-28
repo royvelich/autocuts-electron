@@ -30,8 +30,10 @@
     <vaadin-split-layout class="outer-split">
       <autocuts-side-bar></autocuts-side-bar>
       <vaadin-split-layout orientation="[[splitOrientation]]" class="inner-split">
-        <mesh-view title="Mesh View" show-wireframe="[[showWireframe]]" background-color="[[modelViewportColor]]" mesh-provider="{{modelMeshProvider}}"></mesh-view>
-        <mesh-view title="Solver View" show-wireframe="[[showWireframe]]" background-color="[[solverViewportColor]]" mesh-provider="{{solverMeshProvider}}"></mesh-view>
+        <mesh-view title="Mesh View" show-wireframe="[[showWireframe]]" background-color="[[modelViewportColor]]" mesh-provider="{{modelMeshProvider}}"
+          mesh-interaction="{{meshInteraction}}"></mesh-view>
+        <mesh-view title="Solver View" show-wireframe="[[showWireframe]]" background-color="[[solverViewportColor]]" mesh-provider="{{solverMeshProvider}}"
+          mesh-interaction="{{meshInteraction}}"></mesh-view>
       </vaadin-split-layout>
     </vaadin-split-layout>
   </template>
@@ -39,6 +41,17 @@
     class AutocutsView extends ReduxMixin(Polymer.Element) {
       static get is() {
         return "autocuts-view";
+      }
+
+      static get actions() {
+        return {
+          changeMeshInteraction: (meshInteraction) => {
+            return {
+              type: 'CHANGE_MESH_INTERACTION',
+              meshInteraction: meshInteraction
+            }
+          }
+        };
       }
 
       static get properties() {
@@ -74,6 +87,15 @@
             statePath: 'solver',
             observer: '_solverChanged'
           },
+          editingTool: {
+            type: String,
+            statePath: 'editingTool',
+            observer: '_editingToolChanged'
+          },
+          meshInteraction: {
+            type: String,
+            statePath: 'meshInteraction'
+          },
           modelFilename: {
             type: String
           }
@@ -99,15 +121,39 @@
       ready() {
         this.reloadModelSubscriptionToken = require('pubsub-js').subscribe('reload-model', (name, payload) => {
           this._reloadModel(payload.modelFilename);
+          this.modelMeshProvider = new AutocutsModelMeshProvider(this.autocutsEngine);
+          this.solverMeshProvider = new AutocutsSolverMeshProvider(this.autocutsEngine);
         });
 
         this.reloadModuleSubscriptionToken = require('pubsub-js').subscribe('reload-module', () => {
           this._reloadModule();
         });
 
+        this.meshViewFaceDownSubscriptionToken = require('pubsub-js').subscribe('mesh-view-face-down', (name,
+          payload) => {
+          // console.log('start face #' + payload.faceIndex + ' drag');
+          this.autocutsEngine.setMovingTriangleFaceId(payload.faceIndex);
+        });
+
+        this.meshViewFaceDragSubscriptionToken = require('pubsub-js').subscribe('mesh-view-face-drag', (name,
+          payload) => {
+          // console.log('start face #' + payload.faceIndex + ' drag: (' + payload.offsetX + ', ' + payload.offsetY +
+          // ')');
+          this.autocutsEngine.updateMovingTrianglePosition(payload.offsetX, payload.offsetY);
+        });
+
+        this.meshViewFaceDownSubscriptionToken = require('pubsub-js').subscribe('mesh-view-face-up', (name,
+          payload) => {
+          // console.log('stop face drag');
+          this.autocutsEngine.resetMovingTriangleFaceId();
+        });
+
         this.addEventListener('split-orientation-changed', this._splitOrientationChanged);
         this.addEventListener('lambda-changed', this._lambdaChanged);
         this.addEventListener('delta-changed', this._deltaChanged);
+
+        window.addEventListener('keydown', this._keydown.bind(this));
+        window.addEventListener('keyup', this._keyup.bind(this));
 
         this._loadModule();
 
@@ -122,8 +168,8 @@
       _loadModule() {
         let AutocutsModule = require(this._getLatestModulePath());
         this.autocutsEngine = new AutocutsModule.AutocutsEngine();
-        this.modelMeshProvider = new AutocutsModelMeshProvider(this.autocutsEngine);
-        this.solverMeshProvider = new AutocutsSolverMeshProvider(this.autocutsEngine);
+        this.modelMeshProvider = new MeshProvider([], [], []);
+        this.solverMeshProvider = new MeshProvider([], [], []);
       }
 
       _reloadModule() {
@@ -141,6 +187,22 @@
 
       _deltaChanged(delta) {
         this.autocutsEngine.delta = delta;
+      }
+
+      _editingToolChanged(editingTool) {
+        let g = 5;
+      }
+
+      _keydown(event) {
+        if (event.keyCode === 17) {
+          this.dispatch('changeMeshInteraction', 'rotate');
+        }
+      }
+
+      _keyup(event) {
+        if (event.keyCode === 17) {
+          this.dispatch('changeMeshInteraction', 'faces');
+        }
       }
 
       _solverChanged(solver) {

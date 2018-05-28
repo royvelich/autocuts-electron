@@ -4,15 +4,15 @@ class AutocutsModelMeshProvider extends MeshProvider {
     this.autocutsEngine = autocutsEngine;
   }
 
-  getVertices() {
+  get vertices() {
     return this.autocutsEngine.modelVertices;
   }
 
-  getFaces() {
+  get faces() {
     return this.autocutsEngine.modelFaces;
   }
 
-  getBufferedVertices() {
+  get bufferedVertices() {
     return this.autocutsEngine.modelBufferedVertices;
   }
 }

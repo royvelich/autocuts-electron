@@ -10,7 +10,8 @@
     solverViewportColor: 'rgb(0,0,0)',
     lambda: 0,
     delta: 1,
-    solver: false
+    solver: false,
+    meshInteraction: 'faces'
   };
 
   const reducer = (state, action) => {
@@ -43,6 +44,9 @@
         break;
       case 'CHANGE_SOLVER':
         stateDelta.solver = action.solver;
+        break;
+      case 'CHANGE_MESH_INTERACTION':
+        stateDelta.meshInteraction = action.meshInteraction;
         break;
     }
     return Object.assign({}, state, stateDelta);

@@ -3,11 +3,15 @@ class MeshProvider {
 
   }
 
-  getVertices() {
+  get vertices() {
     return [];
   }
 
-  getFaces() {
+  get faces() {
+    return [];
+  }
+
+  get bufferedVertices() {
     return [];
   }
 }

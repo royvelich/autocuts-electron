@@ -67,7 +67,14 @@
               return false;
             },
             observer: '_showWireframeChanged'
-          }
+          },
+          meshInteraction: {
+            type: String,
+            value: function () {
+              return 'rotate';
+            },
+            observer: '_meshInteractionChanged'
+          },
         }
       }
 
@@ -90,61 +97,53 @@
 
       _showWireframeChanged(showWireframe) {
         if (this.meshWireframe) {
-          this.scene.remove(this.meshWireframe);
-          if (showWireframe) {
-            this.scene.add(this.meshWireframe);
-          }
-        }
-      }
-
-      _rebuildScene() {
-        // let meshProviderVertices = this.meshProvider.getVertices();
-        // let meshProviderFaces = this.meshProvider.getFaces();
-        // let vertices = [];
-
-        // meshProviderFaces.forEach(function (face) {
-        //   let v0 = meshProviderVertices[face[0]];
-        //   let v1 = meshProviderVertices[face[1]];
-        //   let v2 = meshProviderVertices[face[2]];
-        //   vertices.push(v0.x, v0.y, v0.z);
-        //   vertices.push(v1.x, v1.y, v1.z);
-        //   vertices.push(v2.x, v2.y, v2.z);
-        // });
-
-        this.material = new this.THREE.MeshBasicMaterial({
-          color: 0xff0000
-        });
-
-        this.wireframeMaterial = new this.THREE.MeshBasicMaterial({
-          color: 0x000000,
-          wireframe: true,
-        });
-
-        this.geometry = new this.THREE.BufferGeometry();
-        this.geometry.addAttribute('position', new this.THREE.BufferAttribute(new Float32Array(this.meshProvider.getBufferedVertices()),
-          3));
-
-        this.mesh = new this.THREE.Mesh(this.geometry, this.material);
-        this.meshWireframe = new this.THREE.Mesh(this.geometry, this.wireframeMaterial)
-
-        this.scene.add(this.mesh);
-
-        if (this.showWireframe) {
-          this.scene.add(this.meshWireframe);
+          this.meshWireframe.visible = showWireframe;
         }
       }
 
       _meshProviderChanged(meshProvider) {
-        // if (this.scheduledAnimationFrameId) {
-        //   cancelAnimationFrame(this.scheduledAnimationFrameId);
-        // }
+        let THREE = require('three');
+        this._clearSceneSubtree(this.scene);
 
-        //this._renderScene();
+        this.material = new THREE.MeshBasicMaterial({
+          color: 0xff0000
+        });
+
+        this.wireframeMaterial = new THREE.MeshBasicMaterial({
+          color: 0x000000,
+          wireframe: true
+        });
+
+        this.geometry = new THREE.BufferGeometry();
+        this.geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(this.meshProvider.bufferedVertices),
+          3));
+
+        this.mesh = new THREE.Mesh(this.geometry, this.material);
+        this.meshWireframe = new this.THREE.Mesh(this.geometry, this.wireframeMaterial)
+
+        this.scene.add(this.mesh);
+        this.scene.add(this.meshWireframe);
+
+        this.raycaster = new THREE.Raycaster();
+
+        this.lineGeometry = new THREE.BufferGeometry();
+        this.lineGeometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(4 * 3), 3));
+        this.lineMaterial = new THREE.LineBasicMaterial({
+          color: 0xffffff,
+          linewidth: 2,
+          transparent: true
+        });
+        this.line = new THREE.Line(this.lineGeometry, this.lineMaterial);
+        this.scene.add(this.line);
       }
 
       _backgroundColorChanged(color) {
         let THREE = require('three');
         this.renderer.setClearColor(new THREE.Color(color), 1.0);
+      }
+
+      _meshInteractionChanged(meshInteraction) {
+        this.controls.enableRotate = (meshInteraction == 'rotate');
       }
 
       _clearSceneSubtree(object) {
@@ -167,10 +166,15 @@
       }
 
       _initialize() {
+        let THREE = require('three');
         this._createCamera()
         this._createRenderer();
         this._createScene();
         this._createOrbitControl();
+        this._mousePosition = new THREE.Vector2();
+        this._mouseDown = false;
+        this._faceIndex = NaN;
+        this._faceDrag = false;
       }
 
       _createCamera() {
@@ -203,6 +207,7 @@
         this.controls.minDistance = 0;
         this.controls.maxDistance = 1000;
         this.controls.maxPolarAngle = 2 * Math.PI;
+        this.controls.enableRotate = false;
       }
 
       _resizeScene() {
@@ -215,9 +220,36 @@
       _renderScene() {
         this.stats.begin();
 
-        this._rebuildScene();
+        // Update mesh vertices to match the current state of the mesh provider
+        let positions = this.geometry.attributes.position.array;
+        for (let i = 0; i < positions.length; i++) {
+          positions[i] = this.meshProvider.bufferedVertices[i];
+        }
+
+        if (this.meshInteraction === 'faces' && !this._faceDrag) {
+          // Test if the mouse cursor hovers above a mesh face
+          this.raycaster.setFromCamera(this._mousePosition, this.camera);
+          let intersects = this.raycaster.intersectObject(this.mesh);
+          if (intersects.length > 0) {
+            var intersect = intersects[0];
+            var face = intersect.face;
+            var linePosition = this.line.geometry.attributes.position;
+            var meshPosition = this.mesh.geometry.attributes.position;
+            linePosition.copyAt(0, meshPosition, face.a);
+            linePosition.copyAt(1, meshPosition, face.b);
+            linePosition.copyAt(2, meshPosition, face.c);
+            linePosition.copyAt(3, meshPosition, face.a);
+            this.line.geometry.applyMatrix(this.mesh.matrix);
+            this._faceIndex = Math.round(intersect.faceIndex / 3);
+            this.line.visible = true;
+          } else {
+            this.line.visible = false;
+          }
+        }
+
+        this.geometry.attributes.position.needsUpdate = true;
+
         this.renderer.render(this.scene, this.camera);
-        this._clearSceneSubtree(this.scene);
 
         this.stats.end();
 
@@ -225,6 +257,9 @@
       }
 
       _connectScene() {
+        this.renderer.domElement.onmousedown = this._mouseDownHandler.bind(this)
+        this.renderer.domElement.onmousemove = this._mouseMoveHandler.bind(this)
+        this.renderer.domElement.onmouseup = this._mouseUpHandler.bind(this)
         this.root.querySelector('.container').appendChild(this.renderer.domElement);
         this.stats = new Stats();
         this.stats.showPanel(1);
@@ -232,6 +267,62 @@
         this.stats.dom.style.top = '';
         this.stats.dom.style.bottom = '0px';
         this.root.querySelector('.container').appendChild(this.stats.dom);
+      }
+
+      _mouseDownHandler(e) {
+        this._mouseDown = true;
+
+        switch (this.meshInteraction) {
+          case 'faces':
+            if (!isNaN(this._faceIndex)) {
+              require('pubsub-js').publish('mesh-view-face-down', {
+                faceIndex: this._faceIndex
+              });
+            }
+            break;
+        }
+      }
+
+      _mouseMoveHandler(e) {
+        event.preventDefault();
+        let bounding = this.renderer.domElement.getBoundingClientRect();
+        this._mousePosition.x = (event.offsetX / bounding.width) * 2 - 1;
+        this._mousePosition.y = -(event.offsetY / bounding.height) * 2 + 1;
+
+        if (this._mouseDown) {
+          switch (this.meshInteraction) {
+            case 'faces':
+              if (!isNaN(this._faceIndex)) {
+                if (!this._faceDrag) {
+                  this._faceDrag = true;
+                }
+
+                require('pubsub-js').publish('mesh-view-face-drag', {
+                  faceIndex: this._faceIndex,
+                  offsetX: e.movementX / 30,
+                  offsetY: e.movementY / 30
+                });
+              }
+              break;
+          }
+        }
+      }
+
+      _mouseUpHandler(e) {
+        this._mouseDown = false;
+
+        switch (this.meshInteraction) {
+          case 'faces':
+            if (this._faceDrag) {
+              this._faceDrag = false;
+              if (this._faceIndex !== NaN) {
+                require('pubsub-js').publish('mesh-view-face-up', {
+                  faceIndex: this._faceIndex
+                });
+              }
+            }
+            break;
+        }
       }
     }
     customElements.define(MeshView.is, MeshView);

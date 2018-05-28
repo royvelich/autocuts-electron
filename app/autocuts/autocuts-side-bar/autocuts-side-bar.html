@@ -60,7 +60,7 @@
       </vaadin-text-field>
     </side-bar-section>
     <side-bar-section title="Tools">
-      <vaadin-dropdown-menu label="Editing Tool" value="camera" on-value-changed="_editingToolChanged">
+      <vaadin-dropdown-menu label="Editing Tool" value="{{editingTool}}">
         <template>
           <vaadin-list-box>
             <vaadin-item value="camera">Camera</vaadin-item>
@@ -126,6 +126,13 @@
               return false;
             },
             observer: '_solverChanged'
+          },
+          editingTool: {
+            type: String,
+            value: function () {
+              return 'camera';
+            },
+            observer: '_editingToolChanged'
           }
         };
       }
@@ -166,6 +173,12 @@
             return {
               type: 'CHANGE_SOLVER',
               solver: solver
+            }
+          },
+          changeEditingTool: (editingTool) => {
+            return {
+              type: 'CHANGE_EDITING_TOOL',
+              editingTool: editingTool
             }
           }
         };
@@ -221,16 +234,6 @@
         require('pubsub-js').publish('mesh-view.resize');
       }
 
-      _editingToolChanged(e) {
-        this.dispatchEvent(new CustomEvent('editing-tool-changed', {
-          bubbles: true,
-          composed: true,
-          detail: {
-            editingTool: e.detail.value
-          }
-        }));
-      }
-
       _modelViewportColorChanged(e) {
         this.dispatch('changeModelViewportColor', e.detail.value);
       }
@@ -273,6 +276,10 @@
 
       _solverChanged(solver) {
         this.dispatch('changeSolver', solver);
+      }
+
+      _editingToolChanged(editingTool) {
+        this.dispatch('changeEditingTool', editingTool);
       }
     }
     customElements.define(AutocutsSideBar.is, AutocutsSideBar);

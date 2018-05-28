@@ -132,10 +132,6 @@ NAN_GETTER(AutocutsEngine::SolverFacesGet)
     info.GetReturnValue().Set(solverFacesArray);
 }
 
-
-
-
-
 NAN_GETTER(AutocutsEngine::ModelBufferedVerticesGet)
 {
     // `Unwrap` refer C++ object from JS Object
@@ -150,6 +146,49 @@ NAN_GETTER(AutocutsEngine::SolverBufferedVerticesGet)
     auto autocutsEngine = Nan::ObjectWrap::Unwrap<AutocutsEngine>(info.Holder());
     v8::Local<v8::Array> bufferedSolverVertices = Nan::New(autocutsEngine->GetBufferedSolverVertices());
     info.GetReturnValue().Set(bufferedSolverVertices);
+}
+
+NAN_METHOD(AutocutsEngine::SetMovingTriangleFaceId)
+{
+    auto autocutsEngine = Nan::ObjectWrap::Unwrap<AutocutsEngine>(info.Holder());
+
+    // Validate input arguments
+    if (!info[0]->IsInt32())
+    {
+        Nan::ThrowTypeError("Argument should be an integer");
+        return;
+    }
+
+    auto faceId = Nan::To<v8::Number>(info[0]).ToLocalChecked();
+    autocutsEngine->SetMovingTriangleFaceId(faceId->Int32Value());
+}
+
+NAN_METHOD(AutocutsEngine::UpdateMovingTrianglePosition)
+{
+    auto autocutsEngine = Nan::ObjectWrap::Unwrap<AutocutsEngine>(info.Holder());
+
+    // Validate input arguments
+    if (!info[0]->IsNumber())
+    {
+        Nan::ThrowTypeError("First argument should be a Number type");
+        return;
+    }
+
+    if (!info[1]->IsNumber())
+    {
+        Nan::ThrowTypeError("Second argument should be a Number type");
+        return;
+    }
+
+    auto offsetX = Nan::To<v8::Number>(info[0]).ToLocalChecked();
+    auto offsetY = Nan::To<v8::Number>(info[1]).ToLocalChecked();
+    autocutsEngine->UpdateMovingTrianglePosition(RVec2(offsetX->NumberValue(), offsetY->NumberValue()));
+}
+
+NAN_METHOD(AutocutsEngine::ResetMovingTriangleFaceId)
+{
+    auto autocutsEngine = Nan::ObjectWrap::Unwrap<AutocutsEngine>(info.Holder());
+    autocutsEngine->ResetMovingTriangleFaceId();
 }
 
 NAN_MODULE_INIT(AutocutsEngine::Init)
@@ -171,6 +210,9 @@ NAN_MODULE_INIT(AutocutsEngine::Init)
     Nan::SetPrototypeMethod(ctor, "startSolver", StartSolver);
     Nan::SetPrototypeMethod(ctor, "stopSolver", StopSolver);
     Nan::SetPrototypeMethod(ctor, "solverProgressed", SolverProgressed);
+    Nan::SetPrototypeMethod(ctor, "setMovingTriangleFaceId", SetMovingTriangleFaceId);
+    Nan::SetPrototypeMethod(ctor, "updateMovingTrianglePosition", UpdateMovingTrianglePosition);
+    Nan::SetPrototypeMethod(ctor, "resetMovingTriangleFaceId", ResetMovingTriangleFaceId);
 
     // Add member accessors
     auto deltaProperty = Nan::New("delta").ToLocalChecked();

@@ -10,6 +10,7 @@
         "src/BBox.cpp",
         "src/Energy.cpp",
         "src/EnergySymDir.cpp",
+        "src/IntegerEnergy.cpp",
         "src/Newton.cpp",
         "src/Position.cpp",
         "src/Separation.cpp",

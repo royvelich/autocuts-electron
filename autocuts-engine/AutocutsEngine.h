@@ -21,10 +21,29 @@ class AutocutsEngine : public Nan::ObjectWrap
 {
   public:
     static NAN_MODULE_INIT(Init);
+
+    static NAN_METHOD(New);
     static NAN_METHOD(LoadModel);
     static NAN_METHOD(StartSolver);
     static NAN_METHOD(StopSolver);
     static NAN_METHOD(SolverProgressed);
+
+    static NAN_METHOD(SetMovingTriangleFaceId);
+    static NAN_METHOD(UpdateMovingTrianglePosition);
+    static NAN_METHOD(ResetMovingTriangleFaceId);
+
+    static NAN_GETTER(DeltaGet);
+    static NAN_SETTER(DeltaSet);
+
+    static NAN_GETTER(LambdaGet);
+    static NAN_SETTER(LambdaSet);
+
+    static NAN_GETTER(ModelVerticesGet);
+    static NAN_GETTER(ModelFacesGet);
+    static NAN_GETTER(SolverVerticesGet);
+    static NAN_GETTER(SolverFacesGet);
+    static NAN_GETTER(ModelBufferedVerticesGet);
+    static NAN_GETTER(SolverBufferedVerticesGet);
 
     AutocutsEngine();
     virtual ~AutocutsEngine();
@@ -46,19 +65,13 @@ class AutocutsEngine : public Nan::ObjectWrap
     const Nan::Persistent<v8::Array>& GetBufferedModelVertices();
     const Nan::Persistent<v8::Array>& GetBufferedSolverVertices();
 
+    void AddTriangleToFixedPositionSet(int32_t faceId);
+    void SetMovingTriangleFaceId(int32_t faceId);
+    void ResetMovingTriangleFaceId();
+    void UpdateMovingTrianglePosition(const RVec2& offset);
+
   private:
-    static NAN_METHOD(New);
-    static NAN_METHOD(GetName);
-    static NAN_GETTER(DeltaGet);
-    static NAN_SETTER(DeltaSet);
-    static NAN_GETTER(LambdaGet);
-    static NAN_SETTER(LambdaSet);
-    static NAN_GETTER(ModelVerticesGet);
-    static NAN_GETTER(ModelFacesGet);
-    static NAN_GETTER(SolverVerticesGet);
-    static NAN_GETTER(SolverFacesGet);
-    static NAN_GETTER(ModelBufferedVerticesGet);
-    static NAN_GETTER(SolverBufferedVerticesGet);
+
 
     FileType GetFilenameExtension(std::string fileName);
     std::string ToLower(std::string data);
@@ -78,4 +91,8 @@ class AutocutsEngine : public Nan::ObjectWrap
 
     std::shared_ptr<SolverWrapper> solverWrapper;
     std::thread solverThread;
+
+    Mat32 movingTriangleInitialPosition;
+    Mat32 currentTriangleInitialPosition;
+    int32_t movingTriangleFaceId;
 };
