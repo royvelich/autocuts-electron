@@ -30,10 +30,8 @@
     <vaadin-split-layout class="outer-split">
       <autocuts-side-bar></autocuts-side-bar>
       <vaadin-split-layout orientation="[[splitOrientation]]" class="inner-split">
-        <mesh-view title="Mesh View" show-wireframe="[[showWireframe]]" background-color="[[modelViewportColor]]" mesh-provider="{{modelMeshProvider}}"
-          mesh-interaction="{{meshInteraction}}"></mesh-view>
-        <mesh-view title="Solver View" show-wireframe="[[showWireframe]]" background-color="[[solverViewportColor]]" mesh-provider="{{solverMeshProvider}}"
-          mesh-interaction="{{meshInteraction}}"></mesh-view>
+        <mesh-view title="Mesh View" show-wireframe="[[showWireframe]]" background-color="[[modelViewportColor]]" mesh-provider="{{modelMeshProvider}}" mesh-interaction="{{meshInteraction}}"></mesh-view>
+        <mesh-view title="Solver View" show-wireframe="[[showWireframe]]" background-color="[[solverViewportColor]]" mesh-provider="{{solverMeshProvider}}" mesh-interaction="{{meshInteraction}}"></mesh-view>
       </vaadin-split-layout>
     </vaadin-split-layout>
   </template>
@@ -104,11 +102,15 @@
 
       _getLatestModulePath() {
         const fs = require('fs');
+        const path = require('path')
         let files = [];
         let relativeBasePath = '../autocuts-engine/build/latest-builds/';
 
         fs.readdirSync(relativeBasePath).forEach(file => {
-          files.push(file);
+          let ext = path.extname(file)
+          if (ext === '.node') {
+            files.push(file);
+          }
         });
 
         files.sort(function (a, b) {
@@ -129,21 +131,18 @@
           this._reloadModule();
         });
 
-        this.meshViewFaceDownSubscriptionToken = require('pubsub-js').subscribe('mesh-view-face-down', (name,
-          payload) => {
+        this.meshViewFaceDownSubscriptionToken = require('pubsub-js').subscribe('mesh-view-face-down', (name, payload) => {
           // console.log('start face #' + payload.faceIndex + ' drag');
-          this.autocutsEngine.setMovingTriangleFaceId(payload.faceIndex);
+          this.autocutsEngine.setMovingTriangleFaceId(payload.faceId);
         });
 
-        this.meshViewFaceDragSubscriptionToken = require('pubsub-js').subscribe('mesh-view-face-drag', (name,
-          payload) => {
+        this.meshViewFaceDragSubscriptionToken = require('pubsub-js').subscribe('mesh-view-face-drag', (name, payload) => {
           // console.log('start face #' + payload.faceIndex + ' drag: (' + payload.offsetX + ', ' + payload.offsetY +
           // ')');
-          this.autocutsEngine.updateMovingTrianglePosition(payload.offsetX, payload.offsetY);
+          this.autocutsEngine.updateMovingTrianglePosition(payload.offset.x, payload.offset.y);
         });
 
-        this.meshViewFaceDownSubscriptionToken = require('pubsub-js').subscribe('mesh-view-face-up', (name,
-          payload) => {
+        this.meshViewFaceDownSubscriptionToken = require('pubsub-js').subscribe('mesh-view-face-up', (name, payload) => {
           // console.log('stop face drag');
           this.autocutsEngine.resetMovingTriangleFaceId();
         });

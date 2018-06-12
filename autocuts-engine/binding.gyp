@@ -15,6 +15,7 @@
         "src/Position.cpp",
         "src/Separation.cpp",
         "src/Solver.cpp",
+        "src/PardisoSolver.cpp",
         "src/SolverWrapper.cpp",
         "src/Utils.cpp"
       ],
@@ -35,6 +36,9 @@
                   "VCCLCompilerTool": {
                     "OpenMP": "true",
                     "PreprocessorDefinitions": ["NOMINMAX"]
+                  },
+                  "VCLinkerTool": {
+                    "AdditionalDependencies": ["$(SolutionDir)..\lib\libpardiso500-WIN-X86-64.lib"]
                   }
                 },
                 "msvs_postbuild": "call $(ProjectDir)..\post-build.bat $(TargetDir)$(TargetFileName) $(ProjectDir)latest-builds\\"
@@ -45,6 +49,9 @@
                     "OpenMP": "true",
                     "PreprocessorDefinitions": ["NOMINMAX"]
                   },
+                  "VCLinkerTool": {
+                    "AdditionalDependencies": ["$(SolutionDir)..\lib\libpardiso500-WIN-X86-64.lib"]
+                  }
                 },
                 "msvs_postbuild": "call $(ProjectDir)..\post-build.bat $(TargetDir)$(TargetFileName) $(ProjectDir)latest-builds\\"
               }

@@ -13,13 +13,15 @@ using namespace std;
 class IntegerEnergy
 {
   public:
-      IntegerEnergy();
+    IntegerEnergy();
 
     void init(int n);
     void value(const MatX2 &X, double &f);
+    void gradient(const MatX2& X, Vec& g);
+    void hessian(const MatX2& X);
 
   private:
     SpMat EVvar1, EVvar2, Eint, Eintt, V2V, V2Vt;
-    MatX2 EintP;
-    Vec EintP_cosine_rowwise_sum;
+    MatX2 EintX;
+    Vec EintX_cosine_rowwise_sum;
 };

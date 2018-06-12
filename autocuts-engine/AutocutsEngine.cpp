@@ -40,6 +40,105 @@ AutocutsEngine::~AutocutsEngine()
     solverFacesArray.Reset();
 }
 
+void AutocutsEngine::FindEdgeLenghtsForSeparation()
+{
+    SpMat Esept = solverWrapper->solver->energy->separation->Esept;
+    Vec edge_lengths = Vec::Ones(Esept.cols());
+    int v1, v2, num_edges, pair1, pair2;
+    double edge_len;
+    Vec3 v1pos, v2pos;
+    double total = 0.;
+    int cnt = 0;
+    for (int i = 0; i < modelFacesMatrix.rows(); ++i)
+    {
+        Vec3i face = modelFacesMatrix.row(i);
+        for (int j = 0; j < 3; ++j)
+        { // loop over all 3 triangle edges
+            v1 = face(j);
+            v2 = face((j + 1) % 3);
+            num_edges = FindCorrespondingUvEdges(v1, v2);
+            if (num_edges == 2)
+            { // this is an actual separation energy pair
+                v1pos = modelVerticesMatrix.row(v1);
+                v2pos = modelVerticesMatrix.row(v2);
+                edge_len = 0.5 * (v1pos - v2pos).squaredNorm();
+                total += (v1pos - v2pos).norm();
+                cnt++;
+                pair1 = FindCorrespondingPairIndex(uvEdges[0].first, uvEdges[1].first);
+                pair2 = FindCorrespondingPairIndex(uvEdges[0].second, uvEdges[1].second);
+                if (pair1 == -1 || pair2 == -1)
+                {
+                    pair1 = FindCorrespondingPairIndex(uvEdges[0].first, uvEdges[1].second);
+                    pair2 = FindCorrespondingPairIndex(uvEdges[0].second, uvEdges[1].first);
+                }
+                edge_lengths(pair1) = edge_len;
+                edge_lengths(pair2) = edge_len;
+            }
+        }
+    }
+
+    if (setEdgeLenghtsToAverage)
+    {
+        edge_lengths = Vec::Constant(Esept.cols(), total / (double)cnt);
+    }
+
+    solverWrapper->get_slot();
+    solverWrapper->solver->energy->separation->edge_lenghts_per_pair = edge_lengths;
+    solverWrapper->release_slot();
+}
+
+int AutocutsEngine::FindCorrespondingUvEdges(int v1, int v2)
+{
+    SpMat V2Vt = solverWrapper->solver->energy->separation->V2Vt;
+    vector<int> v1_cand, v2_cand;
+    // select candidates
+    for (int i = 0; i < V2Vt.outerSize(); ++i)
+    {
+        SpMat::InnerIterator it(V2Vt, i);
+        if (it.col() == v1)
+        {
+            for (; it; ++it)
+                v1_cand.push_back(it.row());
+            if (v2_cand.size() > 0)
+                break; // we found both
+        }
+        else if (it.col() == v2)
+        {
+            for (; it; ++it)
+                v2_cand.push_back(it.row());
+            if (v1_cand.size() > 0)
+                break; // we found both
+        }
+        continue;
+    }
+    // find <= 2 existing edges
+    uvEdges.clear();
+    for (int v1c : v1_cand)
+    {
+        for (int v2c : v2_cand)
+        {
+            if (floor(v1c / 3.0) == floor(v2c / 3.0))
+                v1c < v2c ? uvEdges.push_back(pair<int, int>(v1c, v2c)) : uvEdges.push_back(pair<int, int>(v2c, v1c));
+        }
+    }
+    return uvEdges.size();
+}
+
+int AutocutsEngine::FindCorrespondingPairIndex(int i1, int i2)
+{
+    SpMat Esept = solverWrapper->solver->energy->separation->Esept;
+    for (int i = 0; i < Esept.outerSize(); ++i)
+    {
+        int idx_xi, idx_xj;
+        SpMat::InnerIterator it(Esept, i);
+        idx_xi = it.row();
+        idx_xj = (++it).row();
+        if ((idx_xi == i1 && idx_xj == i2) || (idx_xj == i1 && idx_xi == i2))
+            return i;
+    }
+    return -1;
+}
+
 void AutocutsEngine::LoadModel(std::string modelFilePath)
 {
     auto modelFileType = GetFilenameExtension(modelFilePath);
@@ -178,6 +277,8 @@ void AutocutsEngine::LoadModel(std::string modelFilePath)
 
     bufferedModelVertices.Reset(localBufferedModelVertices);
     bufferedSolverVertices.Reset(localBufferedSolverVertices);
+
+    FindEdgeLenghtsForSeparation();
 }
 
 void AutocutsEngine::StartSolver()

@@ -96,54 +96,54 @@
       }
 
       _showWireframeChanged(showWireframe) {
-        if (this.meshWireframe) {
-          this.meshWireframe.visible = showWireframe;
+        if (this._meshWireframe) {
+          this._meshWireframe.visible = showWireframe;
         }
       }
 
       _meshProviderChanged(meshProvider) {
         let THREE = require('three');
-        this._clearSceneSubtree(this.scene);
+        this._clearSceneSubtree(this._scene);
 
-        this.material = new THREE.MeshBasicMaterial({
+        this._material = new THREE.MeshBasicMaterial({
           color: 0xff0000
         });
 
-        this.wireframeMaterial = new THREE.MeshBasicMaterial({
+        this._wireframeMaterial = new THREE.MeshBasicMaterial({
           color: 0x000000,
           wireframe: true
         });
 
-        this.geometry = new THREE.BufferGeometry();
-        this.geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(this.meshProvider.bufferedVertices),
+        this._geometry = new THREE.BufferGeometry();
+        this._geometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(this.meshProvider.bufferedVertices),
           3));
 
-        this.mesh = new THREE.Mesh(this.geometry, this.material);
-        this.meshWireframe = new this.THREE.Mesh(this.geometry, this.wireframeMaterial)
+        this._mesh = new THREE.Mesh(this._geometry, this._material);
+        this._meshWireframe = new this.THREE.Mesh(this._geometry, this._wireframeMaterial)
 
-        this.scene.add(this.mesh);
-        this.scene.add(this.meshWireframe);
+        this._scene.add(this._mesh);
+        this._scene.add(this._meshWireframe);
 
-        this.raycaster = new THREE.Raycaster();
+        this._raycaster = new THREE.Raycaster();
 
-        this.lineGeometry = new THREE.BufferGeometry();
-        this.lineGeometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(4 * 3), 3));
-        this.lineMaterial = new THREE.LineBasicMaterial({
+        this._lineGeometry = new THREE.BufferGeometry();
+        this._lineGeometry.addAttribute('position', new THREE.BufferAttribute(new Float32Array(4 * 3), 3));
+        this._lineMaterial = new THREE.LineBasicMaterial({
           color: 0xffffff,
           linewidth: 2,
           transparent: true
         });
-        this.line = new THREE.Line(this.lineGeometry, this.lineMaterial);
-        this.scene.add(this.line);
+        this._line = new THREE.Line(this._lineGeometry, this._lineMaterial);
+        this._scene.add(this._line);
       }
 
       _backgroundColorChanged(color) {
         let THREE = require('three');
-        this.renderer.setClearColor(new THREE.Color(color), 1.0);
+        this._renderer.setClearColor(new THREE.Color(color), 1.0);
       }
 
       _meshInteractionChanged(meshInteraction) {
-        this.controls.enableRotate = (meshInteraction == 'rotate');
+        this._controls.enableRotate = (meshInteraction == 'rotate');
       }
 
       _clearSceneSubtree(object) {
@@ -152,12 +152,12 @@
           object.remove(object.children[0]);
         }
 
-        if (object.geometry) {
-          object.geometry.dispose()
+        if (object._geometry) {
+          object._geometry.dispose()
         }
 
-        if (object.material) {
-          object.material.dispose()
+        if (object._material) {
+          object._material.dispose()
         }
 
         if (object.texture) {
@@ -171,96 +171,84 @@
         this._createRenderer();
         this._createScene();
         this._createOrbitControl();
-        this._mousePosition = new THREE.Vector2();
+        this._intersection = null;
         this._mouseDown = false;
-        this._faceIndex = NaN;
-        this._faceDrag = false;
+        this._mouseDrag = false;
       }
 
       _createCamera() {
         let THREE = require('three');
-        this.camera = new THREE.PerspectiveCamera(45, 0, 0.1, 10000);
-        this.camera.position.z = 2;
+        this._camera = new THREE.PerspectiveCamera(45, 0, 0.1, 10000);
+        this._camera.position.z = 2;
       }
 
       _createRenderer() {
         let THREE = require('three');
-        this.renderer = new THREE.WebGLRenderer({
+        this._renderer = new THREE.WebGLRenderer({
           antialias: true
         });
-        this.renderer.setPixelRatio(window.devicePixelRatio);
+        this._renderer.setPixelRatio(window.devicePixelRatio);
       }
 
       _createScene() {
         let THREE = require('three');
-        this.scene = new THREE.Scene();
+        this._scene = new THREE.Scene();
       }
 
       _createOrbitControl() {
         let THREE = require('three');
         let OrbitControls = require('three-orbit-controls')(THREE);
-        this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-        this.controls.enableDamping = true;
-        this.controls.dampingFactor = 0.25;
-        this.controls.screenSpacePanning = false;
-        this.controls.enableKeys = false;
-        this.controls.minDistance = 0;
-        this.controls.maxDistance = 1000;
-        this.controls.maxPolarAngle = 2 * Math.PI;
-        this.controls.enableRotate = false;
+        this._controls = new OrbitControls(this._camera, this._renderer.domElement);
+        this._controls.enableDamping = true;
+        this._controls.dampingFactor = 0.25;
+        this._controls.screenSpacePanning = false;
+        this._controls.enableKeys = false;
+        this._controls.minDistance = 0;
+        this._controls.maxDistance = 1000;
+        this._controls.maxPolarAngle = 2 * Math.PI;
+        this._controls.enableRotate = false;
       }
 
       _resizeScene() {
         let THREE = require('three');
-        this.camera.aspect = this.offsetWidth / (this.offsetHeight);
-        this.camera.updateProjectionMatrix();
-        this.renderer.setSize(this.offsetWidth, this.offsetHeight);
+        this._camera.aspect = this.offsetWidth / (this.offsetHeight);
+        this._camera.updateProjectionMatrix();
+        this._renderer.setSize(this.offsetWidth, this.offsetHeight);
       }
 
       _renderScene() {
         this.stats.begin();
 
-        // Update mesh vertices to match the current state of the mesh provider
-        let positions = this.geometry.attributes.position.array;
+        // Update _mesh vertices to match the current state of the _mesh provider
+        let positions = this._geometry.attributes.position.array;
         for (let i = 0; i < positions.length; i++) {
           positions[i] = this.meshProvider.bufferedVertices[i];
         }
 
-        if (this.meshInteraction === 'faces' && !this._faceDrag) {
-          // Test if the mouse cursor hovers above a mesh face
-          this.raycaster.setFromCamera(this._mousePosition, this.camera);
-          let intersects = this.raycaster.intersectObject(this.mesh);
-          if (intersects.length > 0) {
-            var intersect = intersects[0];
-            var face = intersect.face;
-            var linePosition = this.line.geometry.attributes.position;
-            var meshPosition = this.mesh.geometry.attributes.position;
-            linePosition.copyAt(0, meshPosition, face.a);
-            linePosition.copyAt(1, meshPosition, face.b);
-            linePosition.copyAt(2, meshPosition, face.c);
-            linePosition.copyAt(3, meshPosition, face.a);
-            this.line.geometry.applyMatrix(this.mesh.matrix);
-            this._faceIndex = Math.round(intersect.faceIndex / 3);
-            this.line.visible = true;
-          } else {
-            this.line.visible = false;
-          }
+        if (this.meshInteraction === 'faces' && this._intersection) {
+          let linePosition = this._line.geometry.attributes.position;
+          let meshPosition = this._mesh.geometry.attributes.position;
+          linePosition.copyAt(0, meshPosition, this._intersection.face.a);
+          linePosition.copyAt(1, meshPosition, this._intersection.face.b);
+          linePosition.copyAt(2, meshPosition, this._intersection.face.c);
+          linePosition.copyAt(3, meshPosition, this._intersection.face.a);
+          this._line.geometry.applyMatrix(this._mesh.matrix);
+          this._line.visible = true;
+        } else {
+          this._line.visible = false;
         }
 
-        this.geometry.attributes.position.needsUpdate = true;
-
-        this.renderer.render(this.scene, this.camera);
-
+        this._geometry.attributes.position.needsUpdate = true;
+        this._renderer.render(this._scene, this._camera);
         this.stats.end();
-
         this.scheduledAnimationFrameId = requestAnimationFrame(() => this._renderScene());
       }
 
       _connectScene() {
-        this.renderer.domElement.onmousedown = this._mouseDownHandler.bind(this)
-        this.renderer.domElement.onmousemove = this._mouseMoveHandler.bind(this)
-        this.renderer.domElement.onmouseup = this._mouseUpHandler.bind(this)
-        this.root.querySelector('.container').appendChild(this.renderer.domElement);
+        this._renderer.domElement.onmousedown = this._mouseDownHandler.bind(this)
+        this._renderer.domElement.onmousemove = this._mouseMoveHandler.bind(this)
+        this._renderer.domElement.onmouseup = this._mouseUpHandler.bind(this)
+        this.root.querySelector('.container').appendChild(this._renderer.domElement);
         this.stats = new Stats();
         this.stats.showPanel(1);
         this.stats.dom.style.position = 'absolute';
@@ -270,59 +258,75 @@
       }
 
       _mouseDownHandler(e) {
-        this._mouseDown = true;
-
         switch (this.meshInteraction) {
           case 'faces':
-            if (!isNaN(this._faceIndex)) {
+            if (this._intersection) {
               require('pubsub-js').publish('mesh-view-face-down', {
-                faceIndex: this._faceIndex
+                faceId: this._intersection.faceId
               });
             }
             break;
         }
+
+        this._mouseDown = true;
       }
 
       _mouseMoveHandler(e) {
         event.preventDefault();
-        let bounding = this.renderer.domElement.getBoundingClientRect();
-        this._mousePosition.x = (event.offsetX / bounding.width) * 2 - 1;
-        this._mousePosition.y = -(event.offsetY / bounding.height) * 2 + 1;
+        let THREE = require('three');
+        let deviceMousePosition = new THREE.Vector2();
+        let boundingClientRect = this._renderer.domElement.getBoundingClientRect();
+        deviceMousePosition.x = (e.offsetX / boundingClientRect.width) * 2 - 1;
+        deviceMousePosition.y = -(e.offsetY / boundingClientRect.height) * 2 + 1;
+        this._raycaster.setFromCamera(deviceMousePosition, this._camera);
 
-        if (this._mouseDown) {
+        if (!this._mouseDrag) {
+          let intersections = this._raycaster.intersectObject(this._mesh);
+          if (intersections.length > 0) {
+            this._intersection = intersections[0];
+            this._intersection.plane = new THREE.Plane();
+            this._intersection.offset = new THREE.Vector3();
+            this._intersection.plane.setFromNormalAndCoplanarPoint(this._camera.getWorldDirection(this._intersection.plane.normal), this._intersection.point);
+            this._intersection.faceId = Math.round(this._intersection.faceIndex / 3);
+          } else {
+            this._intersection = null;
+          }
+
+          if (this._mouseDown) {
+            this._mouseDrag = true;
+          }
+        } else if (this._intersection) {
+          let currentIntersectionPoint = new THREE.Vector3();
+          if (this._raycaster.ray.intersectPlane(this._intersection.plane, currentIntersectionPoint)) {
+            this._intersection.offset.subVectors(currentIntersectionPoint, this._intersection.point);
+          }
+
           switch (this.meshInteraction) {
             case 'faces':
-              if (!isNaN(this._faceIndex)) {
-                if (!this._faceDrag) {
-                  this._faceDrag = true;
-                }
-
-                require('pubsub-js').publish('mesh-view-face-drag', {
-                  faceIndex: this._faceIndex,
-                  offsetX: e.movementX / 30,
-                  offsetY: e.movementY / 30
-                });
-              }
+              require('pubsub-js').publish('mesh-view-face-drag', {
+                faceId: this._intersection.faceId,
+                offset: this._intersection.offset
+              });
               break;
           }
         }
       }
 
       _mouseUpHandler(e) {
-        this._mouseDown = false;
-
-        switch (this.meshInteraction) {
-          case 'faces':
-            if (this._faceDrag) {
-              this._faceDrag = false;
-              if (this._faceIndex !== NaN) {
+        if (this._mouseDrag) {
+          switch (this.meshInteraction) {
+            case 'faces':
+              if (this._intersection) {
                 require('pubsub-js').publish('mesh-view-face-up', {
-                  faceIndex: this._faceIndex
+                  faceId: this._intersection.faceId,
                 });
               }
-            }
-            break;
+              break;
+          }
         }
+
+        this._mouseDown = false;
+        this._mouseDrag = false;
       }
     }
     customElements.define(MeshView.is, MeshView);

@@ -75,6 +75,9 @@ class AutocutsEngine : public Nan::ObjectWrap
 
     FileType GetFilenameExtension(std::string fileName);
     std::string ToLower(std::string data);
+    void FindEdgeLenghtsForSeparation();
+    int FindCorrespondingUvEdges(int v1, int v2);
+    int FindCorrespondingPairIndex(int i1, int i2);
 
     Eigen::MatrixXd modelVerticesMatrix;
     Eigen::MatrixXi modelFacesMatrix;
@@ -95,4 +98,8 @@ class AutocutsEngine : public Nan::ObjectWrap
     Mat32 movingTriangleInitialPosition;
     Mat32 currentTriangleInitialPosition;
     int32_t movingTriangleFaceId;
+    bool setEdgeLenghtsToAverage = false;
+
+    // The UV vertex pair(s) mapped from the 3d mesh vertex pair ev1-ev2
+    vector<pair<int, int>> uvEdges;
 };

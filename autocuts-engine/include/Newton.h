@@ -3,6 +3,8 @@
 #include "Solver.h"
 #include "EigenTypes.h"
 
+//#define USE_PARDISO
+
 #ifdef USE_PARDISO
 #include "PardisoSolver.h"
 #endif
@@ -14,32 +16,32 @@ using namespace std;
 
 class Newton : public Solver
 {
-public:
-	Newton();
+  public:
+    Newton();
 
-	int step();
-	void linesearch();
-	bool test_progress();
-	void internal_init();
-	void internal_update_external_mesh();
+    int step();
+    void linesearch();
+    bool test_progress();
+    void internal_init();
+    void internal_update_external_mesh();
 
-private:
-	// Wrapper function for flip_avoiding_line_search
-	double eval_ls(Mat& x);
+  private:
+    // Wrapper function for flip_avoiding_line_search
+    double eval_ls(Mat &x);
 
-	// multiply a std::vector by a constant
-	void mult(vector<double>& v, double s);
+    // multiply a std::vector by a constant
+    void mult(vector<double> &v, double s);
 
-	// norm of the progress on the mesh
-	double diff_norm;
+    // norm of the progress on the mesh
+    double diff_norm;
 
-	// Solver that computes Hp = -g
-	Eigen::SimplicialLDLT<SpMat> solver; // not used anymore
+    // Solver that computes Hp = -g
+    Eigen::SimplicialLDLT<SpMat> solver; // not used anymore
 
 #ifdef USE_PARDISO
-	unique_ptr<PardisoSolver<vector<int>, vector<double>>> pardiso = nullptr;
+    unique_ptr<PardisoSolver<vector<int>, vector<double>>> pardiso = nullptr;
 #else
-  	bool needs_init = true;
+    bool needs_init = true;
 #endif
-	long long int prevTime;
+    long long int prevTime;
 };
